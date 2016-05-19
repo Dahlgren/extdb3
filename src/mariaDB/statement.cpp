@@ -126,23 +126,30 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
           unsigned int time_value;
           for (unsigned int i = 0; i < tokens.size(); i++)
           {
-            time_value = std::stoul(tokens[i]);
-            switch (i)
+            try
             {
-              case 0:
-        		    param.time_buffer.year = time_value;
-              case 1:
-                param.time_buffer.month = time_value;
-              case 2:
-                param.time_buffer.day = time_value;
-              case 3:
-                param.time_buffer.hour = time_value;
-              case 4:
-                param.time_buffer.minute = time_value;
-              case 5:
-                param.time_buffer.second = time_value;
-              default:
-                throw MariaDBStatementException2("Invalid Time Format: [" + param.buffer + "]");
+              time_value = std::stoul(tokens[i]);
+              switch (i)
+              {
+                case 0:
+          		    param.time_buffer.year = time_value;
+                case 1:
+                  param.time_buffer.month = time_value;
+                case 2:
+                  param.time_buffer.day = time_value;
+                case 3:
+                  param.time_buffer.hour = time_value;
+                case 4:
+                  param.time_buffer.minute = time_value;
+                case 5:
+                  param.time_buffer.second = time_value;
+                default:
+                  throw MariaDBStatementException2("Invalid Time Format: [" + param.buffer + "]");
+              }
+            }
+            catch(std::exception const &e)
+            {
+              throw MariaDBStatementException2("Invalid Time Format: [" + param.buffer + "]");
             }
           }
         }
