@@ -15,7 +15,7 @@ class CfgFunctions
 	{
 		class system
 		{
-			class PreInit {preInit = 1;};
+			class preInit {preInit = 1;};
 		};
 	};
 };
