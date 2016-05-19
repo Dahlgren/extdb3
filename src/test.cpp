@@ -9,8 +9,7 @@
 
 #include "ext.h"
 
-#if defined(TEST_APP) && defined(DEBUG_TESTING)
-
+#ifdef TEST_APP
 	int main(int nNumberofArgs, char* pszArgs[])
 	{
 		int result_size = 80;

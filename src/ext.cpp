@@ -99,15 +99,16 @@ Ext::Ext(std::string shared_library_path)
 		#ifdef DEBUG_TESTING
 			auto console_temp = spdlog::stdout_logger_mt("extDB Console logger");
 			console.swap(console_temp);
+		#elif TEST_APP
+			auto console_temp = spdlog::stdout_logger_mt("extDB Console logger");
+			console.swap(console_temp);
 		#endif
-
 		//		File Logger
 		std::time_t t = std::time(nullptr);
 		std::tm tm = *std::localtime(&t); //Not Threadsafe
 
 		boost::filesystem::path log_relative_path;
 		log_relative_path = boost::filesystem::path(ext_info.path);
-		log_relative_path /= "extDB";
 		log_relative_path /= "logs";
 		log_relative_path /= std::to_string((tm.tm_year + 1900));
 		log_relative_path /= std::to_string((tm.tm_mon + 1));
@@ -120,8 +121,9 @@ Ext::Ext(std::string shared_library_path)
 		spdlog::set_level(spdlog::level::info);
 		spdlog::set_pattern("%v");
 
+		logger->info();
+		logger->info("extDB3: https://bitbucket.org/torndeco/extdb3/wiki/Home");
 		logger->info("extDB3: Version: {0}", EXTDB_VERSION);
-		logger->info("extDB3: https://github.com/Torndeco/extDB3");
 		#ifdef __GNUC__
 			#ifndef DEBUG_TESTING
 				logger->info("extDB3: Linux Version");

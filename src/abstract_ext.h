@@ -33,7 +33,7 @@ public:
 	{
 		int max_threads;
 		bool allow_reset = false;
-		
+
 		bool logger_flush = true;
 
 		bool extDB_lock = false;
@@ -46,6 +46,8 @@ public:
 
 
 	#ifdef DEBUG_TESTING
+		std::shared_ptr<spdlog::logger> console;
+	#elif TEST_APP
 		std::shared_ptr<spdlog::logger> console;
 	#endif
 	std::shared_ptr<spdlog::logger> logger;
