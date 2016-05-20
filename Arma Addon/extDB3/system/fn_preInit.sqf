@@ -1,6 +1,6 @@
 diag_log "---------------------------------------------------------------------";
 diag_log "---------------------------------------------------------------------";
-param _result = "extDB3" callExtension "9:VERSION";
+private  _result = "extDB3" callExtension "9:VERSION";
 if (_result == "") then
 {
   diag_log "extDB3 Failed to Load, Check Requirements @ https://bitbucket.org/torndeco/extdb3/wiki/Installation";
@@ -10,6 +10,6 @@ if (_result == "") then
 } else {
   diag_log "extDB3 Loaded";
   extDB3_var_loaded = true;
-}
+};
 diag_log "---------------------------------------------------------------------";
 diag_log "---------------------------------------------------------------------";

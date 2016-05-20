@@ -6,6 +6,7 @@ class CfgPatches
 		author="Torndeco";
 		version="1";
 		requiredAddons[] = {};
+    units[] = {};
 	};
 };
 
@@ -15,6 +16,7 @@ class CfgFunctions
 	{
 		class system
 		{
+      file = "extDB3\system";
 			class preInit {preInit = 1;};
 		};
 	};
