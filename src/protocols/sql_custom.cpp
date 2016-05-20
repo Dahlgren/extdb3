@@ -605,10 +605,8 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				result += "],";
 			}
 			result.pop_back();
-		} else {
-			result += "]";
 		}
-		result += "]";
+		result += "]]";
 		#ifdef DEBUG_TESTING
 			extension_ptr->console->info("extDB3: SQL_CUSTOM: Trace: Result: {0}", result);
 		#endif

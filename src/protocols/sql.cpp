@@ -103,10 +103,8 @@ bool SQL::callProtocol(std::string input_str, std::string &result, const bool as
 				result += "],";
 			}
 			result.pop_back();
-		} else {
-			result += "]";
 		}
-		result += "]";
+		result += "]]";
 
 		#ifdef DEBUG_TESTING
 			extension_ptr->console->info("extDB3: SQL: Trace: Result: {0}", result);
