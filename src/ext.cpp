@@ -296,6 +296,7 @@ void Ext::reset()
 	mariadb_databases.clear();
 
 	// Setup ASIO Worker Pool
+	io_service.reset();
 	io_work_ptr.reset(new boost::asio::io_service::work(io_service));
 	for (int i = 0; i < ext_info.max_threads; ++i)
 	{
