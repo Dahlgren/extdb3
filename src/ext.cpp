@@ -879,7 +879,21 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 										ext_info.extDB_lockCode.clear();
 										std::strcpy(output, ("[1]"));
 									}
-									else {
+									else if (tokens[1] == "UNLOCK")
+									{
+										if (!(ext_info.extDB_lockCode.empty()))
+										{
+											if (tokens[2] == ext_info.extDB_lockCode)
+											{
+												std::strcpy(output, ("[1]"));
+												logger->info("extDB3: UnLocked");
+												ext_info.extDB_lockCode.clear();
+												ext_info.extDB_lock = false;
+											}
+										} else {
+											std::strcpy(output, ("[0]"));
+										}
+									}	else {
 										std::strcpy(output, ("[0]"));
 									}
 								}
@@ -899,18 +913,7 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 								}
 								else if (tokens[1] == "UNLOCK")
 								{
-									if (!(ext_info.extDB_lockCode.empty()))
-									{
-										if (tokens[2] == ext_info.extDB_lockCode)
-										{
-											std::strcpy(output, ("[1]"));
-											logger->info("extDB3: UnLocked");
-											ext_info.extDB_lockCode.clear();
-											ext_info.extDB_lock = false;
-										}
-									} else {
-										std::strcpy(output, ("[0]"));
-									}
+									std::strcpy(output, ("[0]"));
 								}
 								else if (tokens[1] == "LOCK_STATUS")
 								{
