@@ -160,7 +160,7 @@ Ext::Ext(std::string shared_library_path)
 			logger->info("Message: Torndeco: 18/05/15");
 			logger->info();
 			logger->info();
-			logger->info("Please UpVote the following feedback tracker(s): ");
+			logger->info("Outstanding Issues that effect extDB3: https://feedback.bistudio.com/T79720");
 			logger->info("Thanks");
 			logger->info();
 			logger->info();
