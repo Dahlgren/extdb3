@@ -51,7 +51,7 @@ void MariaDBStatement::create()
   mysql_stmt_ptr = mysql_stmt_init(connector_ptr->mysql_ptr);
   if (!mysql_stmt_ptr)
   {
-    throw MariaDBStatementException(mysql_stmt_ptr);
+    throw MariaDBStatementException1(mysql_stmt_ptr);
   }
 }
 
@@ -61,7 +61,7 @@ void MariaDBStatement::prepare(std::string &sql_query)
   if (!prepared)
   {
     unsigned long len = sql_query.length();
-    int return_code = mysql_stmt_prepare(mysql_stmt_ptr, sql_query.c_str(), len);
+  	int return_code = mysql_stmt_prepare(mysql_stmt_ptr, sql_query.c_str(), len);
     if (return_code != 0)
     {
       int error_code = mysql_errno(connector_ptr->mysql_ptr);
@@ -69,8 +69,9 @@ void MariaDBStatement::prepare(std::string &sql_query)
       {
         return_code = mysql_stmt_prepare(mysql_stmt_ptr, sql_query.c_str(), len);
       }
+      std::cout << mysql_error(connector_ptr->mysql_ptr) << std::endl;
+	    if (return_code != 0) throw MariaDBStatementException0(connector_ptr->mysql_ptr);
     }
-    if (return_code != 0) throw MariaDBStatementException(mysql_stmt_ptr);
     prepared = true;
   }
 }
@@ -265,17 +266,17 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
   	}
 	if (mysql_stmt_bind_result(mysql_stmt_ptr, mysql_bind_result) != 0)
 	{
-		throw MariaDBStatementException(mysql_stmt_ptr);
+		throw MariaDBStatementException1(mysql_stmt_ptr);
 	}
   };
 
   if (mysql_stmt_execute(mysql_stmt_ptr) != 0)
   {
-    throw MariaDBStatementException(mysql_stmt_ptr);
+    throw MariaDBStatementException1(mysql_stmt_ptr);
   }
   if (mysql_stmt_store_result(mysql_stmt_ptr))
   {
-    throw MariaDBStatementException(mysql_stmt_ptr);
+    throw MariaDBStatementException1(mysql_stmt_ptr);
   }
 
   if (mysql_stmt_result_metadata_ptr)
@@ -288,7 +289,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 
       if ((error_code !=0) && (error_code != MYSQL_DATA_TRUNCATED) && (error_code != MYSQL_NO_DATA))
       {
-        throw MariaDBStatementException(mysql_stmt_ptr);
+        throw MariaDBStatementException1(mysql_stmt_ptr);
       }
     	if (error_code != 0) break;
 

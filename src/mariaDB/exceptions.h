@@ -22,14 +22,33 @@ private:
 };
 
 
-class MariaDBStatementException: public std::exception
+class MariaDBStatementException0: public std::exception
 {
 public:
-  MariaDBStatementException(MYSQL_STMT *mysql_stmt_ptr) : mysql_stmt_ptr(mysql_stmt_ptr) {}
+	MariaDBStatementException0(MYSQL *mysql_ptr) : mysql_ptr(mysql_ptr) {}
   virtual const char* what() const throw()
   {
-    std::cout << "ERROR" << std::endl;
-    std::cout << mysql_stmt_error(mysql_stmt_ptr) << std::endl;
+    #ifdef DEBUG_TESTING
+      std::cout << "ERROR" << std::endl;
+      std::cout << mysql_error(mysql_ptr) << std::endl;
+    #endif
+	  return mysql_error(mysql_ptr);
+  }
+private:
+  MYSQL *mysql_ptr;
+};
+
+
+class MariaDBStatementException1: public std::exception
+{
+public:
+	MariaDBStatementException1(MYSQL_STMT *mysql_stmt_ptr) : mysql_stmt_ptr(mysql_stmt_ptr) {}
+  virtual const char* what() const throw()
+  {
+    #ifdef DEBUG_TESTING
+      std::cout << "ERROR" << std::endl;
+      std::cout << mysql_stmt_error(mysql_stmt_ptr) << std::endl;
+    #endif
 	  return mysql_stmt_error(mysql_stmt_ptr);
   }
 private:
