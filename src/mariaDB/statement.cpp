@@ -93,7 +93,7 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
 
   delete[] mysql_bind_params;
   mysql_bind_params = new MYSQL_BIND[params_count];
-  memset(&mysql_bind_params, 0, sizeof(&mysql_bind_params));
+  //memset(&mysql_bind_params, 0, sizeof(&mysql_bind_params));
 
   for (int i=0 ; i<params_count ; i++)
   {
@@ -175,7 +175,10 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
       case MYSQL_TYPE_BLOB:
       {
         mysql_bind.buffer_type = MYSQL_TYPE_STRING;
-        mysql_bind.buffer  = (char *) param.buffer.c_str();
+        param.buffer_c.reset(new char[param.length+1]);
+		//param.buffer_c = param.buffer;
+		std::copy(param.buffer.begin(), param.buffer.end(), param.buffer_c.get());
+        mysql_bind.buffer  = param.buffer_c.get();
       	mysql_bind.buffer_length = param.length;
         break;
       }
@@ -260,12 +263,11 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
       mysql_bind_result[i].is_unsigned   = (fields[i].flags & UNSIGNED_FLAG) > 0;
       mysql_bind_result[i].error         = &(bind_data[i].isNull);
   	}
-  };
-
-  if (mysql_stmt_bind_result(mysql_stmt_ptr, mysql_bind_result) != 0)
-  {
+	if (mysql_stmt_bind_result(mysql_stmt_ptr, mysql_bind_result) != 0)
+	{
 		throw MariaDBStatementException(mysql_stmt_ptr);
-  }
+	}
+  };
 
   if (mysql_stmt_execute(mysql_stmt_ptr) != 0)
   {

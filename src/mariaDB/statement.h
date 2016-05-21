@@ -25,6 +25,7 @@ public:
   {
 	  enum_field_types type = MYSQL_TYPE_NULL;
 	  std::string buffer;
+    std::unique_ptr<char[]> buffer_c;
 	  std::size_t length = 0;
 	  bool is_unsigned = false;
 		MYSQL_TIME time_buffer;
