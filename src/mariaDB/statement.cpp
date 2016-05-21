@@ -176,8 +176,8 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
       {
         mysql_bind.buffer_type = MYSQL_TYPE_STRING;
         param.buffer_c.reset(new char[param.length+1]);
-		//param.buffer_c = param.buffer;
-		std::copy(param.buffer.begin(), param.buffer.end(), param.buffer_c.get());
+	      //param.buffer_c = param.buffer;
+		    std::copy(param.buffer.begin(), param.buffer.end(), param.buffer_c.get());
         mysql_bind.buffer  = param.buffer_c.get();
       	mysql_bind.buffer_length = param.length;
         break;
