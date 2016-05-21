@@ -635,7 +635,6 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 		extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException2: {0}", e.what());
 		extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException2: Input: {0}", input_str);
 		result = "[0,\"Error MariaDBStatementException2 Exception\"]";
-		session.data->statements.erase(callname);
 	}
 	catch (MariaDBConnectorException &e)
 	{
@@ -646,7 +645,6 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 		extension_ptr->logger->error("extDB3: SQL: Error MariaDBConnectorException: {0}", e.what());
 		extension_ptr->logger->error("extDB3: SQL: Error MariaDBConnectorException: Input: {0}", input_str);
 		result = "[0,\"Error MariaDBConnectorException Exception\"]";
-		session.data->statements.erase(callname);
 	}
 	return true;
 }

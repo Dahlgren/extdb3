@@ -879,23 +879,23 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 										ext_info.extDB_lockCode.clear();
 										std::strcpy(output, ("[1]"));
 									}
-									else if (tokens[1] == "UNLOCK")
+								}
+								else if (tokens[1] == "UNLOCK")
+								{
+									std::strcpy(output, ("[0]"));
+									if (!(ext_info.extDB_lockCode.empty()))
 									{
-										if (!(ext_info.extDB_lockCode.empty()))
+										if (tokens[2] == ext_info.extDB_lockCode)
 										{
-											if (tokens[2] == ext_info.extDB_lockCode)
-											{
-												std::strcpy(output, ("[1]"));
-												logger->info("extDB3: UnLocked");
-												ext_info.extDB_lockCode.clear();
-												ext_info.extDB_lock = false;
-											}
-										} else {
-											std::strcpy(output, ("[0]"));
+											std::strcpy(output, ("[1]"));
+											logger->info("extDB3: UnLocked");
+											ext_info.extDB_lockCode.clear();
+											ext_info.extDB_lock = false;
 										}
-									}	else {
-										std::strcpy(output, ("[0]"));
 									}
+								}	else {
+									std::strcpy(output, "[0,\"Error Invalid Format\"]");
+									logger->error("extDB3: Error Invalid Format: {0}", input_str);
 								}
 								break;
 							case 2:
