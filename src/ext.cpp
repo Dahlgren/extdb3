@@ -382,13 +382,13 @@ void Ext::connectDatabase(char *output, const std::string &database_conf, const 
 			MariaDBPool *database_pool = &mariadb_databases[database_id];
 			database_pool->init(ip, port, username, password, database);
 
-
 			if (!mariadb_idle_cleanup_timer)
 			{
 				mariadb_idle_cleanup_timer.reset(new boost::asio::deadline_timer(io_service));
 				mariadb_idle_cleanup_timer->expires_at(mariadb_idle_cleanup_timer->expires_at() + boost::posix_time::seconds(600));
 				mariadb_idle_cleanup_timer->async_wait(boost::bind(&Ext::idleCleanup, this, _1));
 			}
+			std::strcpy(output, "[1]");
 		}
 		catch (boost::property_tree::ptree_bad_path &e)
 		{
@@ -894,6 +894,21 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 									getUTCTime(result);
 									std::strcpy(output, result.c_str());
 								}
+								else if (tokens[1] == "UNLOCK")
+								{
+									if (!(ext_info.extDB_lockCode.empty()))
+									{
+										if (tokens[2] == ext_info.extDB_lockCode)
+										{
+											std::strcpy(output, ("[1]"));
+											logger->info("extDB3: UnLocked");
+											ext_info.extDB_lockCode.clear();
+											ext_info.extDB_lock = false;
+										}
+									} else {
+										std::strcpy(output, ("[0]"));
+									}
+								}
 								else if (tokens[1] == "LOCK_STATUS")
 								{
 									std::strcpy(output, "[1]");
@@ -942,6 +957,10 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 								{
 									std::strcpy(output, "[0]");
 								}
+								else if (tokens[1] == "UNLOCK")
+								{
+									std::strcpy(output, "[1]");
+								}
 								else if (tokens[1] == "RESET")
 								{
 									if (ext_info.allow_reset)
@@ -980,21 +999,6 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 									ext_info.extDB_lockCode = tokens[2];
 									std::strcpy(output, ("[1]"));
 									logger->info("extDB3: Locked");
-								}
-								else if (tokens[1] == "UNLOCK")
-								{
-									if (!(ext_info.extDB_lockCode.empty()))
-									{
-										if (tokens[2] == ext_info.extDB_lockCode)
-										{
-											std::strcpy(output, ("[1]"));
-											logger->info("extDB3: UnLocked");
-											ext_info.extDB_lockCode.clear();
-											ext_info.extDB_lock = false;
-										}
-									} else {
-										std::strcpy(output, ("[0]"));
-									}
 								}
 								else
 								{
