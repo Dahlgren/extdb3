@@ -392,6 +392,7 @@ void Ext::connectDatabase(char *output, const std::string &database_conf, const 
 		}
 		catch (boost::property_tree::ptree_bad_path &e)
 		{
+			std::strcpy(output, "[0,\"Database Config Error\"]");
 			mariadb_databases.erase(database_id);
 			#ifdef DEBUG_TESTING
 				console->info("extDB3: Config Error: {0}: {1}", database_conf, e.what());
@@ -400,6 +401,7 @@ void Ext::connectDatabase(char *output, const std::string &database_conf, const 
 		}
 		catch (MariaDBConnectorException &e)
 		{
+			std::strcpy(output, "[0,\"Database Connection Error\"]");
 			mariadb_databases.erase(database_id);
 			#ifdef DEBUG_TESTING
 				console->info("extDB3: MariaDBConnectorException: {0}: {1}", database_conf, e.what());
