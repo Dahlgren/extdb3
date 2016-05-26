@@ -17,6 +17,6 @@ public:
 private:
 	MariaDBPool *database_pool;
 
-	bool check_dataType_string = false;
+	int check_dataType_string = 0;
 	bool check_dataType_null = false;
 };

@@ -182,6 +182,14 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							{
 								option.string_escape_quotes = true;
 							}
+							else if	(boost::algorithm::iequals(sub_token, std::string("string2")) == 1)
+							{
+								option.stringify2 = true;
+							}
+							else if	(boost::algorithm::iequals(sub_token, std::string("string_escape_quotes2")) == 1)
+							{
+								option.string_escape_quotes2 = true;
+							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("strip")) == 1)
 							{
 								option.strip = true;
@@ -250,6 +258,14 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							else if	(boost::algorithm::iequals(sub_token, std::string("string_escape_quotes")) == 1)
 							{
 								option.string_escape_quotes = true;
+							}
+							else if	(boost::algorithm::iequals(sub_token, std::string("string2")) == 1)
+							{
+								option.stringify2 = true;
+							}
+							else if	(boost::algorithm::iequals(sub_token, std::string("string_escape_quotes2")) == 1)
+							{
+								option.string_escape_quotes2 = true;
 							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("strip")) == 1)
 							{
@@ -375,7 +391,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 
 		if ((tokens.size()-1) != calls_itr->second.highest_input_value)
 		{
-			throw MariaDBStatementException2("Config Invalid Number Number of Inputs Got " + std::to_string(tokens.size()-1) + " Expected " + std::to_string(calls_itr->second.highest_input_value));
+			throw extDB3Exception("Config Invalid Number Number of Inputs Got " + std::to_string(tokens.size()-1) + " Expected " + std::to_string(calls_itr->second.highest_input_value));
 		}
 
 		if (!calls_itr->second.preparedStatement)
@@ -448,11 +464,21 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				}
 				if (calls_itr->second.input_options[i].string_escape_quotes)
 				{
-						boost::replace_all(tmp_str, "\"", "\"\"");
+					boost::replace_all(tmp_str, "\"", "\"\"");
+					tmp_str = "\"" + tmp_str + "\"";
 				}
 				if (calls_itr->second.input_options[i].stringify)
 				{
-						tmp_str = "\"" + tmp_str + "\"";
+					tmp_str = "\"" + tmp_str + "\"";
+				}
+				if (calls_itr->second.input_options[i].string_escape_quotes2)
+				{
+					boost::replace_all(tmp_str, "'", "'");
+					tmp_str = "'" + tmp_str + "'";
+				}
+				if (calls_itr->second.input_options[i].stringify2)
+				{
+					tmp_str = "'" + tmp_str + "'";
 				}
 				boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i) + "$"), tmp_str);  //TODO Improve this
 			}
@@ -538,6 +564,18 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				if (calls_itr->second.input_options[i].stringify)
 				{
 						processed_inputs[i].buffer = "\"" + processed_inputs[i].buffer + "\"";
+						processed_inputs[i].length = processed_inputs[i].buffer.size();
+				}
+
+				if (calls_itr->second.input_options[i].string_escape_quotes2)
+				{
+						boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
+						processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
+						processed_inputs[i].length = processed_inputs[i].buffer.size();
+				}
+				if (calls_itr->second.input_options[i].stringify2)
+				{
+						processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
 						processed_inputs[i].length = processed_inputs[i].buffer.size();
 				}
 			}
@@ -626,15 +664,15 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			extension_ptr->logger->info("extDB3: SQL_CUSTOM: Trace: Result: {0}", result);
 		#endif
 	}
-	catch (MariaDBStatementException2 &e) // Make new exception & renamed it
+	catch (extDB3Exception &e) // Make new exception & renamed it
 	{
 		#ifdef DEBUG_TESTING
-			extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException2: {0}", e.what());
-			extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException2: Input: {0}", input_str);
+			extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+			extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
 		#endif
-		extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException2: {0}", e.what());
-		extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException2: Input: {0}", input_str);
-		result = "[0,\"Error MariaDBStatementException2 Exception\"]";
+		extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+		extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+		result = "[0,\"Error extDB3Exception Exception\"]";
 	}
 	catch (MariaDBConnectorException &e)
 	{

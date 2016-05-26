@@ -9,6 +9,20 @@
 #include <exception>
 #include <string>
 
+
+class extDB3Exception : public std::exception
+{
+public:
+	MariaDBStatementException2(std::string msg) : msg(msg) {}
+	virtual const char* what() const throw()
+	{
+		return msg.c_str();
+	}
+private:
+	std::string msg;
+};
+
+
 class MariaDBConnectorException: public std::exception
 {
 public:
@@ -53,19 +67,6 @@ public:
   }
 private:
   MYSQL_STMT *mysql_stmt_ptr;
-};
-
-
-class MariaDBStatementException2 : public std::exception
-{
-public:
-	MariaDBStatementException2(std::string msg) : msg(msg) {}
-	virtual const char* what() const throw()
-	{
-		return msg.c_str();
-	}
-private:
-	std::string msg;
 };
 
 

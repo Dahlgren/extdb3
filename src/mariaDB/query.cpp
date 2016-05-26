@@ -34,7 +34,7 @@ void MariaDBQuery::init(MariaDBConnector &connector)
 }
 
 
-void MariaDBQuery::get(std::vector<std::vector<std::string>> &result_vec, bool check_dataType_string, bool check_dataType_null)
+void MariaDBQuery::get(std::vector<std::vector<std::string>> &result_vec, int &check_dataType_string, bool check_dataType_null)
 {
   result_vec.clear();
   MYSQL_RES *result = (mysql_store_result(connector_ptr->mysql_ptr));  // Returns NULL for Errors & No Result
@@ -84,11 +84,16 @@ void MariaDBQuery::get(std::vector<std::vector<std::string>> &result_vec, bool c
                     field_row.emplace_back("\"\"");
                   }
                 }
-                if (check_dataType_string)
+                switch (check_dataType_string)
                 {
-                  field_row.emplace_back(('"' + std::move(tmp_str) + '"'));
-                } else {
-                  field_row.push_back(std::move(tmp_str));
+                  case 1:
+                    field_row.emplace_back(('"' + std::move(tmp_str) + '"'));
+                    break;
+                  case 2:
+                    field_row.emplace_back(('\'' + std::move(tmp_str) + '\''));
+                    break;
+                  default:
+                    field_row.push_back(std::move(tmp_str));
                 }
                 break;
               }

@@ -17,6 +17,9 @@ struct sql_option
   bool stringify = false;
   bool string_escape_quotes = false;
 
+  bool stringify2 = false;
+  bool string_escape_quotes2 = false;
+
   bool mysql_escape = false;
 
   bool strip = false;

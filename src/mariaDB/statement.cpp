@@ -69,8 +69,7 @@ void MariaDBStatement::prepare(std::string &sql_query)
       {
         return_code = mysql_stmt_prepare(mysql_stmt_ptr, sql_query.c_str(), len);
       }
-      std::cout << mysql_error(connector_ptr->mysql_ptr) << std::endl;
-	    if (return_code != 0) throw MariaDBStatementException0(connector_ptr->mysql_ptr);
+	  if (return_code != 0) throw MariaDBStatementException0(connector_ptr->mysql_ptr);
     }
     prepared = true;
   }
@@ -85,7 +84,7 @@ unsigned long MariaDBStatement::getParamsCount()
 
 void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param> &params)
 {
-  int params_count = getParamsCount();
+  int params_count = mysql_stmt_param_count(mysql_stmt_ptr); // mysql_stmt_ptr->param_count;
 
   if (params.size() != params_count)
   {
@@ -291,7 +290,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
       {
         throw MariaDBStatementException1(mysql_stmt_ptr);
       }
-    	if (error_code != 0) break;
+      if (error_code != 0) break;
 
       //Process Result
       std::vector<std::string> result;
@@ -381,10 +380,20 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
               if (output_options[i].string_escape_quotes)
               {
                 boost::replace_all(tmp_str, "\"", "\"\"");
+                tmp_str = "\"" + tmp_str + "\"";
               }
               if (output_options[i].stringify)
               {
                 tmp_str = "\"" + tmp_str + "\"";
+              }
+              if (output_options[i].string_escape_quotes2)
+              {
+                boost::replace_all(tmp_str, "\"", "\"\"");
+                tmp_str = "'" + tmp_str + "'";
+              }
+              if (output_options[i].stringify2)
+              {
+                tmp_str = "'" + tmp_str + "'";
               }
               result.push_back(std::move(tmp_str));
               break;

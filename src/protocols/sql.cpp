@@ -31,7 +31,11 @@ bool SQL::init(AbstractExt *extension, const std::string &database_id, const std
 	{
 		if (boost::algorithm::iequals(token, std::string("TEXT")))
 		{
-			check_dataType_string = true;
+			check_dataType_string = 1;
+		}
+		if (boost::algorithm::iequals(token, std::string("TEXT2")))
+		{
+			check_dataType_string2 = 2;
 		}
 		else if (boost::algorithm::iequals(token, std::string("NULL")))
 		{
@@ -40,7 +44,10 @@ bool SQL::init(AbstractExt *extension, const std::string &database_id, const std
 	}
 
 	#ifdef DEBUG_TESTING
-		extension_ptr->console->info("extDB3: SQL: Initialized: Add Quotes around TEXT Datatypes: {0}", check_dataType_string);
+		if (check_dataType_string > 0)
+		{
+			extension_ptr->console->info("extDB3: SQL: Initialized: Add Quotes around TEXT Datatypes mode: {0}", check_dataType_string);
+		}
 		if (check_dataType_null)
 		{
 			extension_ptr->console->info("extDB3: SQL: Initialized: NULL = objNull");
@@ -50,14 +57,18 @@ bool SQL::init(AbstractExt *extension, const std::string &database_id, const std
 			extension_ptr->console->info("extDB3: SQL: Initialized: NULL = \"\"");
 		}
 	#endif
-	extension_ptr->logger->info("extDB3: SQL: Initialized: Add Quotes around TEXT Datatypes: {0}", check_dataType_string);
+
+	if (check_dataType_string > 0)
+	{
+		extension_ptr->logger->info("extDB3: SQL: Initialized: Add Quotes around TEXT Datatypes mode: {0}", check_dataType_string);
+	}
 	if (check_dataType_null)
 	{
-		extension_ptr->logger->info("extDB3: SQL: Initialized: NULL = objNull", check_dataType_string);
+		extension_ptr->logger->info("extDB3: SQL: Initialized: NULL = objNull");
 	}
 	else
 	{
-		extension_ptr->logger->info("extDB3: SQL: Initialized: NULL = \"\"", check_dataType_string);
+		extension_ptr->logger->info("extDB3: SQL: Initialized: NULL = \"\"");
 	}
 
 	return true;
