@@ -34,7 +34,7 @@ void MariaDBQuery::init(MariaDBConnector &connector)
 }
 
 
-void MariaDBQuery::get(std::vector<std::vector<std::string>> &result_vec, int &check_dataType_string, bool check_dataType_null)
+void MariaDBQuery::get(std::vector<std::vector<std::string>> &result_vec, int check_dataType_string, bool check_dataType_null)
 {
   result_vec.clear();
   MYSQL_RES *result = (mysql_store_result(connector_ptr->mysql_ptr));  // Returns NULL for Errors & No Result

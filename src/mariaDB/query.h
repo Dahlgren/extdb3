@@ -22,7 +22,7 @@ public:
 
   void init(MariaDBConnector &connector);
   void send(std::string &sql_query);
-  void get(std::vector<std::vector<std::string>> &result_vec, int &check_dataType_string=false, bool check_dataType_null=false);
+  void get(std::vector<std::vector<std::string>> &result_vec, int check_dataType_string=0, bool check_dataType_null=false);
 
 private:
   MariaDBConnector *connector_ptr;

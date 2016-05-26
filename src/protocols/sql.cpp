@@ -35,7 +35,7 @@ bool SQL::init(AbstractExt *extension, const std::string &database_id, const std
 		}
 		if (boost::algorithm::iequals(token, std::string("TEXT2")))
 		{
-			check_dataType_string2 = 2;
+			check_dataType_string = 2;
 		}
 		else if (boost::algorithm::iequals(token, std::string("NULL")))
 		{

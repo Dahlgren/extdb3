@@ -88,7 +88,7 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
 
   if (params.size() != params_count)
   {
-	  throw MariaDBStatementException2("SQL Invalid Number Number of Inputs Got " + std::to_string(params.size()) + " Expected " + std::to_string(params_count));
+	  throw extDB3Exception("SQL Invalid Number Number of Inputs Got " + std::to_string(params.size()) + " Expected " + std::to_string(params_count));
   }
 
   delete[] mysql_bind_params;
@@ -144,12 +144,12 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
                 case 5:
                   param.time_buffer.second = time_value;
                 default:
-                  throw MariaDBStatementException2("Invalid Time Format: [" + param.buffer + "]");
+                  throw extDB3Exception("Invalid Time Format: [" + param.buffer + "]");
               }
             }
             catch(std::exception const &e)
             {
-              throw MariaDBStatementException2("Invalid Time Format: [" + param.buffer + "]");
+              throw extDB3Exception("Invalid Time Format: [" + param.buffer + "]");
             }
           }
         }
@@ -190,10 +190,10 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
       }
       case MYSQL_TYPE_LONG_BLOB:
       {
-        throw MariaDBStatementException2("Field Type not supported: LONGBLOB/LONGTEXT");
+        throw extDB3Exception("Field Type not supported: LONGBLOB/LONGTEXT");
       }
       default:
-        throw MariaDBStatementException2("Unknown Field Type: " + std::to_string(param.type));
+        throw extDB3Exception("Unknown Field Type: " + std::to_string(param.type));
     }
     mysql_bind_params[i] = (std::move(mysql_bind));
   }
@@ -234,7 +234,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
         }
         case MYSQL_TYPE_LONG_BLOB:
         {
-          throw MariaDBStatementException2("MYSQL_TYPE_LONG_BLOB type not supported when using Prepared Statements");
+          throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported when using Prepared Statements");
         }
         /*
         case MYSQL_TYPE_DECIMAL:
@@ -341,7 +341,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
                   switch (strip_chars_mode)
                   {
                     case 2: // Log + Error
-                      throw MariaDBStatementException2("Bad Character detected from database query");
+                      throw extDB3Exception("Bad Character detected from database query");
                     //case 1: // Log
                       //logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
                   }
@@ -411,7 +411,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 
             case MYSQL_TYPE_LONG_BLOB:
             {
-              throw MariaDBStatementException2("MYSQL_TYPE_LONG_BLOB type not supported");
+              throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported");
             }
             default:
               std::string tmp_str(&bind_data[i].buffer[0], bind_data[i].length);

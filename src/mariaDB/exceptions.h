@@ -13,7 +13,7 @@
 class extDB3Exception : public std::exception
 {
 public:
-	MariaDBStatementException2(std::string msg) : msg(msg) {}
+	extDB3Exception(std::string msg) : msg(msg) {}
 	virtual const char* what() const throw()
 	{
 		return msg.c_str();

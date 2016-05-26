@@ -619,15 +619,15 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				session.data->statements.erase(callname);
 				return true;
 			}
-			catch (MariaDBStatementException2 &e)
+			catch (extDB3Exception &e)
 			{
 				#ifdef DEBUG_TESTING
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException2: {0}", e.what());
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException2: Input: {0}", input_str);
+					extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+					extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
 				#endif
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException2: {0}", e.what());
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException2: Input: {0}", input_str);
-				result = "[0,\"Error MariaDBStatementException2 Exception\"]";
+				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+				result = "[0,\"Error extDB3Exception Exception\"]";
 				session.data->statements.erase(callname);
 				return true;
 			}
