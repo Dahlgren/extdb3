@@ -70,6 +70,19 @@ void MariaDBQuery::get(std::vector<std::vector<std::string>> &result_vec, int ch
             switch(mysql_fields[i].type)
             {
   			      case MYSQL_TYPE_VAR_STRING:
+              {
+                std::string tmp_str(row[i]);
+                if (tmp_str.empty())
+                {
+                  if (check_dataType_null)
+                  {
+                    field_row.emplace_back("objNull");
+                  } else {
+                    field_row.emplace_back("\"\"");
+                  }
+                }
+                break;
+              };
               case MYSQL_TYPE_TINY_BLOB:
               case MYSQL_TYPE_MEDIUM_BLOB:
               case MYSQL_TYPE_BLOB:
