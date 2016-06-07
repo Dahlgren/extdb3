@@ -80,6 +80,18 @@ void MariaDBQuery::get(std::vector<std::vector<std::string>> &result_vec, int ch
                   } else {
                     field_row.emplace_back("\"\"");
                   }
+                } else {
+                  switch (check_dataType_string)
+                  {
+                    case 1:
+                      field_row.emplace_back(('"' + std::move(tmp_str) + '"'));
+                      break;
+                    case 2:
+                      field_row.emplace_back(('\'' + std::move(tmp_str) + '\''));
+                      break;
+                    default:
+                      field_row.push_back(std::move(tmp_str));
+                  }
                 }
                 break;
               };
@@ -96,17 +108,18 @@ void MariaDBQuery::get(std::vector<std::vector<std::string>> &result_vec, int ch
                   } else {
                     field_row.emplace_back("\"\"");
                   }
-                }
-                switch (check_dataType_string)
-                {
-                  case 1:
-                    field_row.emplace_back(('"' + std::move(tmp_str) + '"'));
-                    break;
-                  case 2:
-                    field_row.emplace_back(('\'' + std::move(tmp_str) + '\''));
-                    break;
-                  default:
-                    field_row.push_back(std::move(tmp_str));
+                } else {
+                  switch (check_dataType_string)
+                  {
+                    case 1:
+                      field_row.emplace_back(('"' + std::move(tmp_str) + '"'));
+                      break;
+                    case 2:
+                      field_row.emplace_back(('\'' + std::move(tmp_str) + '\''));
+                      break;
+                    default:
+                      field_row.push_back(std::move(tmp_str));
+                  }
                 }
                 break;
               }
