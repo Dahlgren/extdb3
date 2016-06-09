@@ -144,7 +144,7 @@ include_directories(${SPDLOG_INCLUDE_DIR})
 
 add_definitions(-D TBB_MALLOC)
 if(${WIN32})
- set(TBB_ROOT "C:/local/tbb44_20160413oss")
+ set(TBB_ROOT "C:/local/tbb44_20160526oss")
 endif()
 include(FindTBB)
 if(TBB_FOUND)
