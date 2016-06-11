@@ -871,16 +871,7 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 						switch (tokens.size())
 						{
 							case 3:
-								if (tokens[1] == "LOCK")
-								{
-									if (tokens[2] == ext_info.extDB_lockCode)
-									{
-										ext_info.extDB_lock = false;
-										ext_info.extDB_lockCode.clear();
-										std::strcpy(output, ("[1]"));
-									}
-								}
-								else if (tokens[1] == "UNLOCK")
+								if (tokens[1] == "UNLOCK")
 								{
 									std::strcpy(output, ("[0]"));
 									if (!(ext_info.extDB_lockCode.empty()))
