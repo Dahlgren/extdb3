@@ -85,11 +85,12 @@ bool SQL::callProtocol(std::string input_str, std::string &result, const bool as
 	#endif
 	try
 	{
+		std::string insertID = "0";
 		MariaDBSession session(database_pool);
 		session.data->query.send(input_str);
 
 		std::vector<std::vector<std::string>> result_vec;
-		session.data->query.get(result_vec, check_dataType_string, check_dataType_null);
+		session.data->query.get(insertID, result_vec, check_dataType_string, check_dataType_null);
 
 		result = "[1,[";
 		if (result_vec.size() > 0)

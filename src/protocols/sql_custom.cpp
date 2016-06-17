@@ -359,6 +359,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 
 	std::string callname;
 	std::string tokens_str;
+	std::string insertID = "0";
 	const std::string::size_type found = input_str.find(":");
 	if (found != std::string::npos)
 	{
@@ -633,6 +634,10 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			}
 		}
 		result = "[1,[";
+		if (calls_itr->second.returnInsertID)
+		{
+			result += std::move(insertID) + ",[";
+		};
 		if (result_vec.size() > 0)
 		{
 			for(auto &row: result_vec)
@@ -657,6 +662,10 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			result.pop_back();
 		}
 		result += "]]";
+		if (calls_itr->second.returnInsertID)
+		{
+			result += "]";
+		};
 		#ifdef DEBUG_TESTING
 			extension_ptr->console->info("extDB3: SQL_CUSTOM: Trace: Result: {0}", result);
 		#endif

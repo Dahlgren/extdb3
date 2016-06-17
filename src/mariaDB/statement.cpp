@@ -201,7 +201,7 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
 }
 
 
-void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::vector<std::vector<std::string>> &results)
+void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &results)
 {
   mysql_stmt_result_metadata_ptr = mysql_stmt_result_metadata(mysql_stmt_ptr);
   if (mysql_stmt_result_metadata_ptr)
@@ -277,6 +277,8 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
   {
     throw MariaDBStatementException1(mysql_stmt_ptr);
   }
+
+  insertID = std::to_string(mysql_stmt_insert_id(mysql_stmt_ptr));
 
   if (mysql_stmt_result_metadata_ptr)
   {
