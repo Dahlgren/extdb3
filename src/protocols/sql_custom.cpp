@@ -105,11 +105,12 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 
 			int num_line = 1;
 			int num_line_part = 1;
-			std::string sql;
 			std::string path;
 
 			while(true)
 			{
+				std::string sql;
+
 				// Check For SQLx_1
 				path = section.first + ".SQL" + std::to_string(num_line) + "_" + std::to_string(num_line_part);
 				auto child = ptree.get_child_optional(path);
@@ -293,15 +294,16 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 					}
 				}
 
+				if (!sql.empty())
+				{
+					sql.pop_back();
+				}
+				calls[section.first].sql = sql;
+
 				// Foo
 				++num_line;
 				num_line_part = 1;
 			}
-			if (!sql.empty())
-			{
-				sql.pop_back();
-			}
-			calls[section.first].sql = std::move(sql);
 
 			path = section.first + ".Prepared Statement";
 			calls[section.first].preparedStatement = ptree.get(path, true);
@@ -494,8 +496,9 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			processed_inputs.resize(calls_itr->second.input_options.size());
 			for (int i = 0; i < processed_inputs.size(); ++i)
 			{
+				extension_ptr->console->warn("processed_inputs size {0}", i);
 				processed_inputs[i].type = MYSQL_TYPE_VARCHAR;
-				processed_inputs[i].buffer = std::move(tokens[calls_itr->second.input_options[i].value_number]);
+				processed_inputs[i].buffer = tokens[calls_itr->second.input_options[i].value_number];
 				processed_inputs[i].length = processed_inputs[i].buffer.size();
 				if (calls_itr->second.input_options[i].strip)
 				{
@@ -521,6 +524,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				}
 				if (calls_itr->second.input_options[i].beguidConvert)
 				{
+					std::string beguid_str;
 					try
 					{
 						int64_t steamID = std::stoll(processed_inputs[i].buffer, nullptr);
@@ -532,13 +536,14 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 						for (int i = 0; i < sizeof(parts); i++) {
 							bestring << char(parts[i]);
 						}
-						processed_inputs[i].buffer = md5(bestring.str());
+						beguid_str = std::move(md5(bestring.str()));
 					}
 					catch(std::exception const &e)
 					{
-						processed_inputs[i].buffer = "ERROR";
+						beguid_str = "ERROR";
 					}
-					processed_inputs[i].length = processed_inputs[i].buffer.size();
+					processed_inputs[i].buffer = beguid_str;
+					processed_inputs[i].length = beguid_str.size();
 				}
 				if (calls_itr->second.input_options[i].boolConvert)
 				{
@@ -567,7 +572,6 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 						processed_inputs[i].buffer = "\"" + processed_inputs[i].buffer + "\"";
 						processed_inputs[i].length = processed_inputs[i].buffer.size();
 				}
-
 				if (calls_itr->second.input_options[i].string_escape_quotes2)
 				{
 						boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");

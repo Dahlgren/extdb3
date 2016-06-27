@@ -33,12 +33,12 @@ class SQL_CUSTOM: public AbstractProtocol
 			bool preparedStatement = false;
 			bool returnInsertID = false;
 
-			std::string sql;
 			std::string strip_chars;
 			int strip_chars_mode = 0;
-			
+
 			int highest_input_value = 0;
 
+			std::string sql;
 			std::vector<sql_option> input_options;
 			std::vector<sql_option> output_options;
 		};
