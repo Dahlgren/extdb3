@@ -431,6 +431,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				}
 				if (calls_itr->second.input_options[i].beguidConvert)
 				{
+					std::string beguid_str;
 					try
 					{
 						int64_t steamID = std::stoll(tmp_str, nullptr);
@@ -442,12 +443,13 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 						for (int i = 0; i < sizeof(parts); i++) {
 							bestring << char(parts[i]);
 						}
-						tmp_str = md5(bestring.str());
+						beguid_str = md5(bestring.str());
 					}
 					catch(std::exception const &e)
 					{
-						tmp_str = e.what();
+						beguid_str = e.what();
 					}
+					tmp_str = beguid_str;
 				}
 				if (calls_itr->second.input_options[i].boolConvert)
 				{
@@ -496,7 +498,6 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			processed_inputs.resize(calls_itr->second.input_options.size());
 			for (int i = 0; i < processed_inputs.size(); ++i)
 			{
-				extension_ptr->console->warn("processed_inputs size {0}", i);
 				processed_inputs[i].type = MYSQL_TYPE_VARCHAR;
 				processed_inputs[i].buffer = tokens[calls_itr->second.input_options[i].value_number];
 				processed_inputs[i].length = processed_inputs[i].buffer.size();
