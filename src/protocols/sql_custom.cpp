@@ -444,7 +444,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					}
 					catch(std::exception const &e)
 					{
-						tmp_str = "ERROR";
+						tmp_str = e.what();
 					}
 				}
 				if (calls_itr->second.input_options[i].boolConvert)
@@ -485,7 +485,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			}
 			auto &session_query_itr = session.data->query;
 			session.data->query.send(input_str);
-			session.data->query.get(result_vec);
+			session.data->query.get(insertID, result_vec);
 		} else {
 			// -------------------
 			// Prepared Statement
@@ -594,7 +594,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					session_statement_itr = &session.data->statements[callname];
 				}
 				session_statement_itr->bindParams(processed_inputs);
-				session_statement_itr->execute(calls_itr->second.output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, result_vec);
+				session_statement_itr->execute(calls_itr->second.output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
 			}
 			catch (MariaDBStatementException0 &e)
 			{
