@@ -28,7 +28,7 @@ public:
 	  boost::posix_time::ptime last_used;
 	  MariaDBConnector connector;
 	  MariaDBQuery     query;
-	  std::unordered_map<std::string, MariaDBStatement> statements;
+	  std::unordered_map<std::string, std::vector<MariaDBStatement> > statements;
   };
 
   void init(std::string &host, unsigned int &port, std::string &user, std::string &password, std::string &db);

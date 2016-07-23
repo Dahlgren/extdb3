@@ -147,6 +147,11 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 				std::vector<std::string> tokens;
 				std::vector<std::string> sub_tokens;
 
+				//calls[section.first].sql[num_line] = sql_struct{};
+				if (num_line > calls[section.first].sql.size())
+				{
+					calls[section.first].sql.resize(num_line);
+				};
 				if (!(input_options_str.empty()))
 				{
 					int highest_input_value = 0;
@@ -221,7 +226,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							{
 								highest_input_value = option.value_number;
 							}
-							calls[section.first].input_options.push_back(std::move(option));
+							calls[section.first].sql[(num_line - 1)].input_options.push_back(option);
 						}
 					}
 					calls[section.first].highest_input_value = std::move(highest_input_value);
@@ -290,7 +295,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 								}
 							}
 						}
-						calls[section.first].output_options.push_back(std::move(option));
+						calls[section.first].sql[(num_line - 1)].output_options.push_back(std::move(option));
 					}
 				}
 
@@ -298,7 +303,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 				{
 					sql.pop_back();
 				}
-				calls[section.first].sql = sql;
+				calls[section.first].sql[num_line].sql = sql;
 
 				// Foo
 				++num_line;
@@ -402,240 +407,254 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			// -------------------
 			// Raw SQL
 			// -------------------
-			std::string sql_str = calls_itr->second.sql;
-			std::string tmp_str;
-			for (int i = 0; i < calls_itr->second.input_options.size(); ++i)
+			for (auto &sql : calls_itr->second.sql)
 			{
-				int value_number = calls_itr->second.input_options[i].value_number;
-				tmp_str = tokens[value_number];
-				if (calls_itr->second.input_options[i].strip)
+				std::string sql_str = sql.sql;
+				std::string tmp_str;
+				for (int i = 0; i < sql.input_options.size(); ++i)
 				{
-					std::string stripped_str = tmp_str;
-					for (auto &strip_char : calls_itr->second.strip_chars)
+					int value_number = sql.input_options[i].value_number;
+					tmp_str = tokens[value_number];
+					if (sql.input_options[i].strip)
 					{
-						boost::erase_all(stripped_str, std::string(1, strip_char));
-					}
-					if (stripped_str != tmp_str)
-					{
-						switch (calls_itr->second.strip_chars_mode)
+						std::string stripped_str = tmp_str;
+						for (auto &strip_char : calls_itr->second.strip_chars)
 						{
-							case 2: // Log + Error
-								extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, tmp_str);
-								result = "[0,\"Error Strip Char Found\"]";
-								return true;
-							case 1: // Log
-								extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, tmp_str);
+							boost::erase_all(stripped_str, std::string(1, strip_char));
 						}
-						tmp_str = std::move(stripped_str);
-					}
-				}
-				if (calls_itr->second.input_options[i].beguidConvert)
-				{
-					std::string beguid_str;
-					try
-					{
-						int64_t steamID = std::stoll(tmp_str, nullptr);
-						std::stringstream bestring;
-						int8_t i = 0, parts[8] = { 0 };
-						do parts[i++] = steamID & 0xFF;
-						while (steamID >>= 8);
-						bestring << "BE";
-						for (int i = 0; i < sizeof(parts); i++) {
-							bestring << char(parts[i]);
+						if (stripped_str != tmp_str)
+						{
+							switch (calls_itr->second.strip_chars_mode)
+							{
+								case 2: // Log + Error
+									extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, tmp_str);
+									result = "[0,\"Error Strip Char Found\"]";
+									return true;
+								case 1: // Log
+									extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, tmp_str);
+							}
+							tmp_str = std::move(stripped_str);
 						}
-						beguid_str = md5(bestring.str());
 					}
-					catch(std::exception const &e)
+					if (sql.input_options[i].beguidConvert)
 					{
-						beguid_str = e.what();
+						std::string beguid_str;
+						try
+						{
+							int64_t steamID = std::stoll(tmp_str, nullptr);
+							std::stringstream bestring;
+							int8_t i = 0, parts[8] = { 0 };
+							do parts[i++] = steamID & 0xFF;
+							while (steamID >>= 8);
+							bestring << "BE";
+							for (int i = 0; i < sizeof(parts); i++) {
+								bestring << char(parts[i]);
+							}
+							beguid_str = md5(bestring.str());
+						}
+						catch(std::exception const &e)
+						{
+							beguid_str = e.what();
+						}
+						tmp_str = beguid_str;
 					}
-					tmp_str = beguid_str;
-				}
-				if (calls_itr->second.input_options[i].boolConvert)
-				{
-					if (boost::algorithm::iequals(tmp_str, std::string("1")) == 1)
+					if (sql.input_options[i].boolConvert)
 					{
-						tmp_str = "true";
-					} else {
-						tmp_str = "false";
+						if (boost::algorithm::iequals(tmp_str, std::string("1")) == 1)
+						{
+							tmp_str = "true";
+						} else {
+							tmp_str = "false";
+						}
 					}
-				}
-				if (calls_itr->second.input_options[i].nullConvert)
-				{
-					if (tmp_str.empty())
+					if (sql.input_options[i].nullConvert)
 					{
-						tmp_str = "objNull";
+						if (tmp_str.empty())
+						{
+							tmp_str = "objNull";
+						}
 					}
+					if (sql.input_options[i].string_escape_quotes)
+					{
+						boost::replace_all(tmp_str, "\"", "\"\"");
+						tmp_str = "\"" + tmp_str + "\"";
+					}
+					if (sql.input_options[i].stringify)
+					{
+						tmp_str = "\"" + tmp_str + "\"";
+					}
+					if (sql.input_options[i].string_escape_quotes2)
+					{
+						boost::replace_all(tmp_str, "'", "'");
+						tmp_str = "'" + tmp_str + "'";
+					}
+					if (sql.input_options[i].stringify2)
+					{
+						tmp_str = "'" + tmp_str + "'";
+					}
+					if (sql.input_options[i].mysql_escape)
+					{
+						std::string tmp_escaped_str(" ", (tmp_str.length() * 2) + 1);
+						mysql_real_escape_string(session.data->connector.mysql_ptr, &tmp_escaped_str[0], tmp_str.c_str(), tmp_str.length());
+						tmp_str = std::move(tmp_escaped_str);
+					}
+					boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i) + "$"), tmp_str);  //TODO Improve this
 				}
-				if (calls_itr->second.input_options[i].string_escape_quotes)
-				{
-					boost::replace_all(tmp_str, "\"", "\"\"");
-					tmp_str = "\"" + tmp_str + "\"";
-				}
-				if (calls_itr->second.input_options[i].stringify)
-				{
-					tmp_str = "\"" + tmp_str + "\"";
-				}
-				if (calls_itr->second.input_options[i].string_escape_quotes2)
-				{
-					boost::replace_all(tmp_str, "'", "'");
-					tmp_str = "'" + tmp_str + "'";
-				}
-				if (calls_itr->second.input_options[i].stringify2)
-				{
-					tmp_str = "'" + tmp_str + "'";
-				}
-				boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i) + "$"), tmp_str);  //TODO Improve this
+				auto &session_query_itr = session.data->query;
+				session.data->query.send(input_str);
+				session.data->query.get(insertID, result_vec); // TODO: OUTPUT OPTIONS SUPPORT
 			}
-			auto &session_query_itr = session.data->query;
-			session.data->query.send(input_str);
-			session.data->query.get(insertID, result_vec);
 		} else {
 			// -------------------
 			// Prepared Statement
 			// -------------------
-			std::vector<MariaDBStatement::mysql_bind_param> processed_inputs;
-			processed_inputs.resize(calls_itr->second.input_options.size());
-			for (int i = 0; i < processed_inputs.size(); ++i)
+
+			for (int sql_index = 0; sql_index < calls_itr->second.sql.size(); ++sql_index)
 			{
-				processed_inputs[i].type = MYSQL_TYPE_VARCHAR;
-				processed_inputs[i].buffer = tokens[calls_itr->second.input_options[i].value_number];
-				processed_inputs[i].length = processed_inputs[i].buffer.size();
-				if (calls_itr->second.input_options[i].strip)
+				std::vector<MariaDBStatement::mysql_bind_param> processed_inputs;
+				processed_inputs.resize(calls_itr->second.sql[sql_index].input_options.size());
+				for (int i = 0; i < processed_inputs.size(); ++i)
 				{
-					std::string stripped_str = processed_inputs[i].buffer;
-					for (auto &strip_char : calls_itr->second.strip_chars)
-					{
-						boost::erase_all(stripped_str, std::string(1, strip_char));
-					}
-					if (stripped_str != processed_inputs[i].buffer)
-					{
-						switch (calls_itr->second.strip_chars_mode)
-						{
-							case 2: // Log + Error
-								extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
-								result = "[0,\"Error Strip Char Found\"]";
-								return true;
-							case 1: // Log
-								extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
-						}
-						processed_inputs[i].buffer = std::move(stripped_str);
-						processed_inputs[i].length = processed_inputs[i].buffer.size();
-					}
-				}
-				if (calls_itr->second.input_options[i].beguidConvert)
-				{
-					std::string beguid_str;
-					try
-					{
-						int64_t steamID = std::stoll(processed_inputs[i].buffer, nullptr);
-						std::stringstream bestring;
-						int8_t i = 0, parts[8] = { 0 };
-						do parts[i++] = steamID & 0xFF;
-						while (steamID >>= 8);
-						bestring << "BE";
-						for (int i = 0; i < sizeof(parts); i++) {
-							bestring << char(parts[i]);
-						}
-						beguid_str = std::move(md5(bestring.str()));
-					}
-					catch(std::exception const &e)
-					{
-						beguid_str = "ERROR";
-					}
-					processed_inputs[i].buffer = beguid_str;
-					processed_inputs[i].length = beguid_str.size();
-				}
-				if (calls_itr->second.input_options[i].boolConvert)
-				{
-					if (boost::algorithm::iequals(processed_inputs[i].buffer, std::string("true")) == 1)
-					{
-						processed_inputs[i].buffer = "1";
-					} else {
-						processed_inputs[i].buffer = "0";
-					}
+					processed_inputs[i].type = MYSQL_TYPE_VARCHAR;
+					processed_inputs[i].buffer = tokens[calls_itr->second.sql[sql_index].input_options[i].value_number];
 					processed_inputs[i].length = processed_inputs[i].buffer.size();
-				}
-				if (calls_itr->second.input_options[i].nullConvert)
-				{
-					if (processed_inputs[i].buffer.empty())
+					if (calls_itr->second.sql[sql_index].input_options[i].strip)
 					{
-						processed_inputs[i].type = MYSQL_TYPE_NULL;
+						std::string stripped_str = processed_inputs[i].buffer;
+						for (auto &strip_char : calls_itr->second.strip_chars)
+						{
+							boost::erase_all(stripped_str, std::string(1, strip_char));
+						}
+						if (stripped_str != processed_inputs[i].buffer)
+						{
+							switch (calls_itr->second.strip_chars_mode)
+							{
+								case 2: // Log + Error
+									extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
+									result = "[0,\"Error Strip Char Found\"]";
+									return true;
+								case 1: // Log
+									extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
+							}
+							processed_inputs[i].buffer = std::move(stripped_str);
+							processed_inputs[i].length = processed_inputs[i].buffer.size();
+						}
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].beguidConvert)
+					{
+						std::string beguid_str;
+						try
+						{
+							int64_t steamID = std::stoll(processed_inputs[i].buffer, nullptr);
+							std::stringstream bestring;
+							int8_t i = 0, parts[8] = { 0 };
+							do parts[i++] = steamID & 0xFF;
+							while (steamID >>= 8);
+							bestring << "BE";
+							for (int i = 0; i < sizeof(parts); i++) {
+								bestring << char(parts[i]);
+							}
+							beguid_str = std::move(md5(bestring.str()));
+						}
+						catch(std::exception const &e)
+						{
+							beguid_str = "ERROR";
+						}
+						processed_inputs[i].buffer = beguid_str;
+						processed_inputs[i].length = beguid_str.size();
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].boolConvert)
+					{
+						if (boost::algorithm::iequals(processed_inputs[i].buffer, std::string("true")) == 1)
+						{
+							processed_inputs[i].buffer = "1";
+						} else {
+							processed_inputs[i].buffer = "0";
+						}
+						processed_inputs[i].length = processed_inputs[i].buffer.size();
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].nullConvert)
+					{
+						if (processed_inputs[i].buffer.empty())
+						{
+							processed_inputs[i].type = MYSQL_TYPE_NULL;
+						}
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].string_escape_quotes)
+					{
+							boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
+							processed_inputs[i].length = processed_inputs[i].buffer.size();
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].stringify)
+					{
+							processed_inputs[i].buffer = "\"" + processed_inputs[i].buffer + "\"";
+							processed_inputs[i].length = processed_inputs[i].buffer.size();
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].string_escape_quotes2)
+					{
+							boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
+							processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
+							processed_inputs[i].length = processed_inputs[i].buffer.size();
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].stringify2)
+					{
+							processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
+							processed_inputs[i].length = processed_inputs[i].buffer.size();
 					}
 				}
-				if (calls_itr->second.input_options[i].string_escape_quotes)
+				try
 				{
-						boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
-						processed_inputs[i].length = processed_inputs[i].buffer.size();
+					MariaDBStatement *session_statement_itr;
+					//session.data->statements.erase(callname);
+					if (session.data->statements.count(callname) == 0)
+					{
+						session_statement_itr = &session.data->statements[callname][sql_index];
+						session_statement_itr->init(session.data->connector);
+						session_statement_itr->create();
+						session_statement_itr->prepare(calls_itr->second.sql[sql_index].sql);
+					} else {
+						session_statement_itr = &session.data->statements[callname][sql_index];
+					}
+					session_statement_itr->bindParams(processed_inputs);
+					session_statement_itr->execute(calls_itr->second.sql[sql_index].output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
+					session.data->statements[callname][sql_index] = std::move(*session_statement_itr);
 				}
-				if (calls_itr->second.input_options[i].stringify)
+				catch (MariaDBStatementException0 &e)
 				{
-						processed_inputs[i].buffer = "\"" + processed_inputs[i].buffer + "\"";
-						processed_inputs[i].length = processed_inputs[i].buffer.size();
+					#ifdef DEBUG_TESTING
+						extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
+						extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
+					#endif
+					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
+					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
+					result = "[0,\"Error MariaDBStatementException0 Exception\"]";
+					session.data->statements.erase(callname);
+					return true;
 				}
-				if (calls_itr->second.input_options[i].string_escape_quotes2)
+				catch (MariaDBStatementException1 &e)
 				{
-						boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
-						processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
-						processed_inputs[i].length = processed_inputs[i].buffer.size();
+					#ifdef DEBUG_TESTING
+						extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
+						extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
+					#endif
+					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
+					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
+					result = "[0,\"Error MariaDBStatementException1 Exception\"]";
+					session.data->statements.erase(callname);
+					return true;
 				}
-				if (calls_itr->second.input_options[i].stringify2)
+				catch (extDB3Exception &e)
 				{
-						processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
-						processed_inputs[i].length = processed_inputs[i].buffer.size();
+					#ifdef DEBUG_TESTING
+						extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+						extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+					#endif
+					extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+					extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+					result = "[0,\"Error extDB3Exception Exception\"]";
+					session.data->statements.erase(callname);
+					return true;
 				}
-			}
-			try
-			{
-				MariaDBStatement *session_statement_itr;
-				session.data->statements.erase(callname);
-				if (session.data->statements.count(callname) == 0)
-				{
-					session_statement_itr = &session.data->statements[callname];
-					session_statement_itr->init(session.data->connector);
-					session_statement_itr->create();
-					session_statement_itr->prepare(calls_itr->second.sql);
-				} else {
-					session_statement_itr = &session.data->statements[callname];
-				}
-				session_statement_itr->bindParams(processed_inputs);
-				session_statement_itr->execute(calls_itr->second.output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
-			}
-			catch (MariaDBStatementException0 &e)
-			{
-				#ifdef DEBUG_TESTING
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
-				#endif
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
-				result = "[0,\"Error MariaDBStatementException0 Exception\"]";
-				session.data->statements.erase(callname);
-				return true;
-			}
-			catch (MariaDBStatementException1 &e)
-			{
-				#ifdef DEBUG_TESTING
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
-				#endif
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
-				result = "[0,\"Error MariaDBStatementException1 Exception\"]";
-				session.data->statements.erase(callname);
-				return true;
-			}
-			catch (extDB3Exception &e)
-			{
-				#ifdef DEBUG_TESTING
-					extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
-					extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
-				#endif
-				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
-				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
-				result = "[0,\"Error extDB3Exception Exception\"]";
-				session.data->statements.erase(callname);
-				return true;
 			}
 		}
 		result = "[1,[";

@@ -28,6 +28,14 @@ class SQL_CUSTOM: public AbstractProtocol
 		MariaDBPool *database_pool;
 		boost::property_tree::ptree ptree;
 
+
+		struct sql_struct
+		{
+			std::string sql;
+			std::vector<sql_option> input_options;
+			std::vector<sql_option> output_options;
+		};
+
 		struct call_struct
 		{
 			bool preparedStatement = false;
@@ -38,9 +46,7 @@ class SQL_CUSTOM: public AbstractProtocol
 
 			int highest_input_value = 0;
 
-			std::string sql;
-			std::vector<sql_option> input_options;
-			std::vector<sql_option> output_options;
+			std::vector<sql_struct> sql;
 		};
 		std::unordered_map<std::string, call_struct> calls;
 
