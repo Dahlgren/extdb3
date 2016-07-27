@@ -147,7 +147,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 				std::vector<std::string> tokens;
 				std::vector<std::string> sub_tokens;
 
-				//calls[section.first].sql[num_line] = sql_struct{};
+				//calls[section.first].sql[num_line - 1] = sql_struct{};
 				if (num_line > calls[section.first].sql.size())
 				{
 					calls[section.first].sql.resize(num_line);
@@ -303,7 +303,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 				{
 					sql.pop_back();
 				}
-				calls[section.first].sql[num_line].sql = sql;
+				calls[section.first].sql[(num_line - 1)].sql = sql;
 
 				// Foo
 				++num_line;
