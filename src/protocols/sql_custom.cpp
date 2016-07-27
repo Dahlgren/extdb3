@@ -605,19 +605,23 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				try
 				{
 					MariaDBStatement *session_statement_itr;
-					//session.data->statements.erase(callname);
 					if (session.data->statements.count(callname) == 0)
 					{
-						session_statement_itr = &session.data->statements[callname][sql_index];
-						session_statement_itr->init(session.data->connector);
-						session_statement_itr->create();
-						session_statement_itr->prepare(calls_itr->second.sql[sql_index].sql);
+						session.data->statements[callname].resize(calls_itr->second.sql.size());
+
+						for (int statement_index = 0; statement_index < calls_itr->second.sql.size(); ++statement_index)
+						{
+							session_statement_itr = &session.data->statements[callname][statement_index];
+							session_statement_itr->init(session.data->connector);
+							session_statement_itr->create();
+							session_statement_itr->prepare(calls_itr->second.sql[statement_index].sql);
+						}
+
 					} else {
 						session_statement_itr = &session.data->statements[callname][sql_index];
 					}
 					session_statement_itr->bindParams(processed_inputs);
 					session_statement_itr->execute(calls_itr->second.sql[sql_index].output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
-					session.data->statements[callname][sql_index] = std::move(*session_statement_itr);
 				}
 				catch (MariaDBStatementException0 &e)
 				{
