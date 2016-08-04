@@ -11,6 +11,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <mysql.h>
 
+#include "abstract.h"
 #include "connector.h"
 
 
@@ -22,7 +23,8 @@ public:
 
   void init(MariaDBConnector &connector);
   void send(std::string &sql_query);
-  void get(std::string &insertID, std::vector<std::vector<std::string>> &result_vec, int check_dataType_string=0, bool check_dataType_null=false);
+  void get(int &check_dataType_string, bool &check_dataType_null, std::string &insertID, std::vector<std::vector<std::string>> &result_vec);
+  void get(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &result_vec);
 
 private:
   MariaDBConnector *connector_ptr;

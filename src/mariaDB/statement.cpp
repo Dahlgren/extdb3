@@ -222,7 +222,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
           // MYSQL Types http://dev.mysql.com/doc/refman/5.7/en/c-api-prepared-statement-type-codes.html
 
       switch (fields[i].type)
-    	{
+      {
         case MYSQL_TYPE_DATE:
         case MYSQL_TYPE_TIME:
         case MYSQL_TYPE_DATETIME:
@@ -257,7 +257,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
           mysql_bind_result[i].buffer        = (len > 0) ? &bind_data[i].buffer[0] : NULL;
           break;
         }
-    	}
+      }
       mysql_bind_result[i].length        = &(bind_data[i].length);
       mysql_bind_result[i].is_null       = &(bind_data[i].isNull);
       mysql_bind_result[i].is_unsigned   = (fields[i].flags & UNSIGNED_FLAG) > 0;

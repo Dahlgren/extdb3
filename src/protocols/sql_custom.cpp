@@ -501,8 +501,9 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i) + "$"), tmp_str);  //TODO Improve this
 				}
 				auto &session_query_itr = session.data->query;
-				session.data->query.send(input_str);
-				session.data->query.get(insertID, result_vec); // TODO: OUTPUT OPTIONS SUPPORT
+				session.data->query.send(sql_str);
+				//session.data->query.get(insertID, result_vec); // TODO: OUTPUT OPTIONS SUPPORT
+				session.data->query.get(sql.output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
 			}
 		} else {
 			// -------------------

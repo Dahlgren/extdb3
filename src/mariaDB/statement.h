@@ -23,12 +23,12 @@ public:
 
   struct mysql_bind_param
   {
-	  enum_field_types type = MYSQL_TYPE_NULL;
-	  std::string buffer;
+    enum_field_types type = MYSQL_TYPE_NULL;
+    std::string buffer;
     std::unique_ptr<char[]> buffer_c;
-	  std::size_t length = 0;
-	  bool is_unsigned = false;
-		MYSQL_TIME time_buffer;
+    std::size_t length = 0;
+    bool is_unsigned = false;
+    MYSQL_TIME time_buffer;
   };
 
   void init(MariaDBConnector &connector);
@@ -36,7 +36,7 @@ public:
   void prepare(std::string & sql_query);
   unsigned long getParamsCount();
   void bindParams(std::vector<mysql_bind_param> &params);
-  void execute(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &results);
+  void execute(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &result_vec);
 
 private:
   bool prepared = false;

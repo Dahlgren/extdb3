@@ -34,7 +34,7 @@ void MariaDBQuery::init(MariaDBConnector &connector)
 }
 
 
-void MariaDBQuery::get(std::string &insertID, std::vector<std::vector<std::string>> &result_vec, int check_dataType_string, bool check_dataType_null)
+void MariaDBQuery::get(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &result_vec)
 {
   result_vec.clear();
   MYSQL_RES *result = (mysql_store_result(connector_ptr->mysql_ptr));  // Returns NULL for Errors & No Result
@@ -52,8 +52,144 @@ void MariaDBQuery::get(std::string &insertID, std::vector<std::vector<std::strin
     if (num_fields > 0)
     {
       MYSQL_ROW row;
-      MYSQL_FIELD *mysql_fields;
-      mysql_fields = mysql_fetch_fields(result);
+      MYSQL_FIELD *fields;
+      fields = mysql_fetch_fields(result);
+      while ((row = mysql_fetch_row(result)) != NULL)
+      {
+        std::vector<std::string> field_row;
+        for (unsigned int i = 0; i < num_fields; i++)
+        {
+          switch (fields[i].type)
+          {
+            case MYSQL_TYPE_DATE:
+            {
+              try
+              {
+                std::istringstream is(row[i]);
+                is.imbue(loc_date);
+                boost::posix_time::ptime ptime;
+                is >> ptime;
+
+                std::stringstream stream;
+                facet = new boost::posix_time::time_facet();
+                facet->format("[%Y,%m,%d]");
+                stream.imbue(std::locale(std::locale::classic(), facet));
+                stream << ptime;
+                std::string tmp_str = stream.str();
+                if (tmp_str != "not-a-date-time")
+                {
+                  field_row.push_back(std::move(tmp_str));
+                } else {
+                  field_row.emplace_back("[]");
+                }
+              }
+              catch(std::exception& e)
+              {
+                field_row.emplace_back("[]");
+              }
+              break;
+            }
+            case MYSQL_TYPE_DATETIME:
+            {
+              try
+              {
+                std::istringstream is(row[i]);
+                is.imbue(loc_datetime);
+                boost::posix_time::ptime ptime;
+                is >> ptime;
+
+                std::stringstream stream;
+                facet = new boost::posix_time::time_facet();
+                facet->format("[%Y,%m,%d,%H,%M,%S]");
+                stream.imbue(std::locale(std::locale::classic(), facet));
+                stream << ptime;
+                std::string tmp_str = stream.str();
+                if (tmp_str != "not-a-date-time")
+                {
+                  field_row.push_back(std::move(tmp_str));
+                } else {
+                  field_row.emplace_back("[]");
+                }
+              }
+              catch(std::exception& e)
+              {
+                field_row.emplace_back("[]");
+              }
+              break;
+            }
+            case MYSQL_TYPE_TIME:
+            {
+              try
+              {
+                std::istringstream is(row[i]);
+                is.imbue(loc_time);
+                boost::posix_time::ptime ptime;
+                is >> ptime;
+
+                std::stringstream stream;
+                facet = new boost::posix_time::time_facet();
+                facet->format("[%H,%M,%S]");
+                stream.imbue(std::locale(std::locale::classic(), facet));
+                stream << ptime;
+                std::string tmp_str = stream.str();
+                if (tmp_str != "not-a-date-time")
+                {
+                  field_row.push_back(std::move(tmp_str));
+                } else {
+                  field_row.emplace_back("[]");
+                }
+              }
+              catch(std::exception& e)
+              {
+                field_row.emplace_back("[]");
+              }
+              break;
+            }
+			/*
+            case MYSQL_TYPE_NULL:
+            {
+              if (check_dataType_null)
+              {
+                field_row.emplace_back("objNull");
+              } else {
+                field_row.emplace_back("\"\"");
+              }
+              break;
+            }
+			*/
+            default:
+            {
+              field_row.emplace_back(row[i]);
+            }
+          }
+        }
+      }
+    }
+  }
+  mysql_free_result(result);
+}
+
+
+void MariaDBQuery::get(int &check_dataType_string, bool &check_dataType_null, std::string &insertID, std::vector<std::vector<std::string>> &result_vec)
+{
+  result_vec.clear();
+  MYSQL_RES *result = (mysql_store_result(connector_ptr->mysql_ptr));  // Returns NULL for Errors & No Result
+  insertID = std::to_string(mysql_insert_id(connector_ptr->mysql_ptr));
+  if (!result)
+  {
+    std::string error_msg(mysql_error(connector_ptr->mysql_ptr));
+    if (!error_msg.empty())
+    {
+      mysql_free_result(result);
+      throw MariaDBQueryException(connector_ptr->mysql_ptr);
+    }
+  } else {
+    unsigned int num_fields = mysql_num_fields(result);
+    if (num_fields > 0)
+    {
+      MYSQL_ROW row;
+      MYSQL_FIELD *fields;
+      fields = mysql_fetch_fields(result);
       while ((row = mysql_fetch_row(result)) != NULL)
       {
         std::vector<std::string> field_row;
@@ -68,7 +204,7 @@ void MariaDBQuery::get(std::string &insertID, std::vector<std::vector<std::strin
               field_row.emplace_back("\"\"");
             }
           } else {
-            switch(mysql_fields[i].type)
+            switch(fields[i].type)
             {
   			      case MYSQL_TYPE_VAR_STRING:
               {
