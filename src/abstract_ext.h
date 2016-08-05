@@ -13,7 +13,7 @@
 #include "mariaDB/pool.h"
 
 
-#define EXTDB_VERSION "1.009"
+#define EXTDB_VERSION "1.010"
 #define EXTDB_CONF_VERSION 1
 
 
