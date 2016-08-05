@@ -163,6 +163,7 @@ void MariaDBQuery::get(std::vector<sql_option> &output_options, std::string &str
             }
           }
         }
+		result_vec.push_back(std::move(field_row));
       }
     }
   }
