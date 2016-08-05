@@ -55,6 +55,8 @@ void MariaDBQuery::get(std::vector<sql_option> &output_options, std::string &str
       MYSQL_ROW row;
       MYSQL_FIELD *fields;
       fields = mysql_fetch_fields(result);
+      output_options.resize(num_fields);
+
       while ((row = mysql_fetch_row(result)) != NULL)
       {
         std::vector<std::string> field_row;
@@ -178,7 +180,7 @@ void MariaDBQuery::get(std::vector<sql_option> &output_options, std::string &str
                   }
                   tmp_str = std::move(stripped_str);
                 }
-              }              
+              }
               if (output_options[i].beguidConvert)
               {
                 try
