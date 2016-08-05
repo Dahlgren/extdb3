@@ -498,12 +498,26 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 						mysql_real_escape_string(session.data->connector.mysql_ptr, &tmp_escaped_str[0], tmp_str.c_str(), tmp_str.length());
 						tmp_str = std::move(tmp_escaped_str);
 					}
-					boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i) + "$"), tmp_str);  //TODO Improve this
+					boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i+1) + "$"), tmp_str);  //TODO Improve this
 				}
-				auto &session_query_itr = session.data->query;
-				session.data->query.send(sql_str);
-				//session.data->query.get(insertID, result_vec); // TODO: OUTPUT OPTIONS SUPPORT
-				session.data->query.get(sql.output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
+				try
+				{
+					auto &session_query_itr = session.data->query;
+					session.data->query.send(sql_str);
+					//session.data->query.get(insertID, result_vec); // TODO: OUTPUT OPTIONS SUPPORT
+					session.data->query.get(sql.output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
+				}
+				catch (MariaDBQueryException &e)
+				{
+					#ifdef DEBUG_TESTING
+						extension_ptr->console->error("extDB3: SQL: Error MariaDBQueryException: {0}", e.what());
+						extension_ptr->console->error("extDB3: SQL: Error MariaDBQueryException: Input: {0}", input_str);
+					#endif
+					extension_ptr->logger->error("extDB3: SQL: Error MariaDBQueryException: {0}", e.what());
+					extension_ptr->logger->error("extDB3: SQL: Error MariaDBQueryException: Input: {0}", input_str);
+					result = "[0,\"Error MariaDBQueryException Exception\"]";
+					return true;
+				}
 			}
 		} else {
 			// -------------------
