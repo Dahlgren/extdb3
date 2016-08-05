@@ -13,6 +13,7 @@
 //#include <errmsg.h>
 
 #include "exceptions.h"
+#include "../md5/md5.h"
 
 
 MariaDBQuery::MariaDBQuery()
@@ -145,10 +146,9 @@ void MariaDBQuery::get(std::vector<sql_option> &output_options, std::string &str
               }
               break;
             }
-			/*
             case MYSQL_TYPE_NULL:
             {
-              if (check_dataType_null)
+              if (output_options[i].nullConvert)
               {
                 field_row.emplace_back("objNull");
               } else {
@@ -156,14 +156,81 @@ void MariaDBQuery::get(std::vector<sql_option> &output_options, std::string &str
               }
               break;
             }
-			*/
             default:
             {
-              field_row.emplace_back(row[i]);
+              std::string tmp_str(row[i]);
+              
+              if (output_options[i].strip)
+              {
+                std::string stripped_str(tmp_str);
+                for (auto &strip_char : strip_chars)
+                {
+                  boost::erase_all(stripped_str, std::string(1, strip_char));
+                }
+                if (stripped_str != tmp_str)
+                {
+                  switch (strip_chars_mode)
+                  {
+                    case 2: // Log + Error
+                      throw extDB3Exception("Bad Character detected from database query");
+                    //case 1: // Log
+                      //logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
+                  }
+                  tmp_str = std::move(stripped_str);
+                }
+              }              
+              if (output_options[i].beguidConvert)
+              {
+                try
+                {
+                  int64_t steamID = std::stoll(tmp_str, nullptr);
+                  std::stringstream bestring;
+                  int8_t i = 0, parts[8] = { 0 };
+                  do parts[i++] = steamID & 0xFF;
+                  while (steamID >>= 8);
+                  bestring << "BE";
+                  for (int i = 0; i < sizeof(parts); i++) {
+                    bestring << char(parts[i]);
+                  }
+                  tmp_str = md5(bestring.str());
+                }
+                catch(std::exception const & e)
+                {
+                  tmp_str = "ERROR";
+                }
+              }
+              if (output_options[i].boolConvert)
+              {
+                if (tmp_str == "1")
+                {
+                  tmp_str = "true";
+                } else {
+                  tmp_str = "false";
+                }
+              }
+              if (output_options[i].string_escape_quotes)
+              {
+                boost::replace_all(tmp_str, "\"", "\"\"");
+                tmp_str = "\"" + tmp_str + "\"";
+              }
+              if (output_options[i].stringify)
+              {
+                tmp_str = "\"" + tmp_str + "\"";
+              }
+              if (output_options[i].string_escape_quotes2)
+              {
+                boost::replace_all(tmp_str, "\"", "\"\"");
+                tmp_str = "'" + tmp_str + "'";
+              }
+              if (output_options[i].stringify2)
+              {
+                tmp_str = "'" + tmp_str + "'";
+              }
+              field_row.push_back(std::move(tmp_str));
             }
           }
         }
-		result_vec.push_back(std::move(field_row));
+        result_vec.push_back(std::move(field_row));
       }
     }
   }
