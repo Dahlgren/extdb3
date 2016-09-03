@@ -188,11 +188,11 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							{
 								option.stringify2 = true;
 							}
-							else if	(boost::algorithm::iequals(sub_token, std::string("string_add_escape_quotes")) == 1)
+							else if	(boost::algorithm::iequals(sub_token, std::string("add_escape_quotes")) == 1)
 							{
 								option.string_add_escape_quotes = true;
 							}
-							else if	(boost::algorithm::iequals(sub_token, std::string("string_remove_escape_quotes")) == 1)
+							else if	(boost::algorithm::iequals(sub_token, std::string("remove_escape_quotes")) == 1)
 							{
 								option.string_remove_escape_quotes = true;
 							}
