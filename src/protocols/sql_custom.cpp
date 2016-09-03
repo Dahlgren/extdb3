@@ -548,7 +548,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
 				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
 				result = "[0,\"Error MariaDBStatementException0 Exception\"]";
-				session.data->statements.erase(callname);
+				session.data->statements.clear();
 				return true;
 			}
 			catch (MariaDBStatementException1 &e)
@@ -560,7 +560,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
 				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
 				result = "[0,\"Error MariaDBStatementException1 Exception\"]";
-				session.data->statements.erase(callname);
+				session.data->statements.clear();
 				return true;
 			}
 			catch (extDB3Exception &e)
@@ -572,7 +572,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
 				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
 				result = "[0,\"Error extDB3Exception Exception\"]";
-				session.data->statements.erase(callname);
+				session.data->statements.clear();
 				return true;
 			}
 			
@@ -671,13 +671,14 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				try
 				{
 					session_statement_itr = &session.data->statements[callname][sql_index];
+/*
 					if (session_statement_itr->errorCheck()) // Error Handling incase of Connection Lost, since previous run of Prepared Statement
 					{
 						session_statement_itr->init(session.data->connector);
 						session_statement_itr->create();
 						session_statement_itr->prepare(calls_itr->second.sql[sql_index].sql);
 					};
-
+*/
 					session_statement_itr->bindParams(processed_inputs);
 					session_statement_itr->execute(calls_itr->second.sql[sql_index].output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
 				}
@@ -690,7 +691,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
 					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
 					result = "[0,\"Error MariaDBStatementException0 Exception\"]";
-					session.data->statements.erase(callname);
+					session.data->statements.clear();
 					return true;
 				}
 				catch (MariaDBStatementException1 &e)
@@ -702,7 +703,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
 					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
 					result = "[0,\"Error MariaDBStatementException1 Exception\"]";
-					session.data->statements.erase(callname);
+					session.data->statements.clear();
 					return true;
 				}
 				catch (extDB3Exception &e)
@@ -714,7 +715,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
 					extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
 					result = "[0,\"Error extDB3Exception Exception\"]";
-					session.data->statements.erase(callname);
+					session.data->statements.clear();
 					return true;
 				}
 			}

@@ -88,7 +88,7 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
 
   if (params.size() != params_count)
   {
-	  throw extDB3Exception("SQL Invalid Number Number of Inputs Got " + std::to_string(params.size()) + " Expected " + std::to_string(params_count));
+	  throw extDB3Exception("SQL Invalid Number of Inputs Got " + std::to_string(params.size()) + " Expected " + std::to_string(params_count));
   }
 
   delete[] mysql_bind_params;
@@ -121,8 +121,8 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
           param.buffer.erase(0,1);
           param.buffer.pop_back();
 
-    			std::vector<std::string> tokens;
-    			boost::split(tokens, param.buffer, boost::is_any_of(","));
+            std::vector<std::string> tokens;
+            boost::split(tokens, param.buffer, boost::is_any_of(","));
           unsigned int time_value;
           for (unsigned int i = 0; i < tokens.size(); i++)
           {
