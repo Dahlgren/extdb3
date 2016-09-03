@@ -524,6 +524,60 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			// Prepared Statement
 			// -------------------
 
+			MariaDBStatement *session_statement_itr;
+			
+			try
+			{
+				if (session.data->statements.count(callname) == 0)
+				{
+					session.data->statements[callname].resize(calls_itr->second.sql.size());
+
+					for (int sql_index = 0; sql_index < calls_itr->second.sql.size(); ++sql_index)
+					{
+						session_statement_itr = &session.data->statements[callname][sql_index];
+						session_statement_itr->init(session.data->connector);
+						session_statement_itr->create();
+						session_statement_itr->prepare(calls_itr->second.sql[sql_index].sql);
+					}
+				}
+			}
+			catch (MariaDBStatementException0 &e)
+			{
+				#ifdef DEBUG_TESTING
+					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
+					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
+				#endif
+				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
+				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
+				result = "[0,\"Error MariaDBStatementException0 Exception\"]";
+				session.data->statements.erase(callname);
+				return true;
+			}
+			catch (MariaDBStatementException1 &e)
+			{
+				#ifdef DEBUG_TESTING
+					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
+					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
+				#endif
+				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
+				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
+				result = "[0,\"Error MariaDBStatementException1 Exception\"]";
+				session.data->statements.erase(callname);
+				return true;
+			}
+			catch (extDB3Exception &e)
+			{
+				#ifdef DEBUG_TESTING
+					extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+					extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+				#endif
+				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+				result = "[0,\"Error extDB3Exception Exception\"]";
+				session.data->statements.erase(callname);
+				return true;
+			}
+			
 			for (int sql_index = 0; sql_index < calls_itr->second.sql.size(); ++sql_index)
 			{
 				std::vector<MariaDBStatement::mysql_bind_param> processed_inputs;
@@ -619,22 +673,14 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				}
 				try
 				{
-					MariaDBStatement *session_statement_itr;
-					if (session.data->statements.count(callname) == 0)
+					session_statement_itr = &session.data->statements[callname][sql_index];
+					if (mysql_stmt_error(session_statement_itr) != 0) // Error Handling incase of Connection Lost, since previous run of Prepared Statement
 					{
-						session.data->statements[callname].resize(calls_itr->second.sql.size());
+						session_statement_itr->init(session.data->connector);
+						session_statement_itr->create();
+						session_statement_itr->prepare(calls_itr->second.sql[sql_index].sql);
+					};
 
-						for (int statement_index = 0; statement_index < calls_itr->second.sql.size(); ++statement_index)
-						{
-							session_statement_itr = &session.data->statements[callname][statement_index];
-							session_statement_itr->init(session.data->connector);
-							session_statement_itr->create();
-							session_statement_itr->prepare(calls_itr->second.sql[statement_index].sql);
-						}
-
-					} else {
-						session_statement_itr = &session.data->statements[callname][sql_index];
-					}
 					session_statement_itr->bindParams(processed_inputs);
 					session_statement_itr->execute(calls_itr->second.sql[sql_index].output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
 				}

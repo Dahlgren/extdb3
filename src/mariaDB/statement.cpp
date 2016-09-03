@@ -286,7 +286,6 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
     while (true)
     {
     	error_code = mysql_stmt_fetch(mysql_stmt_ptr);
-      	// we have specified zero buffers for BLOBs, so DATA_TRUNCATED is normal in this case
 
       if ((error_code !=0) && (error_code != MYSQL_DATA_TRUNCATED) && (error_code != MYSQL_NO_DATA))
       {
