@@ -210,19 +210,17 @@ void MariaDBQuery::get(std::vector<sql_option> &output_options, std::string &str
                   tmp_str = "false";
                 }
               }
-              if (output_options[i].string_escape_quotes)
-              {
-                boost::replace_all(tmp_str, "\"", "\"\"");
-                tmp_str = "\"" + tmp_str + "\"";
-              }
+  			  if (output_options[i].string_remove_escape_quotes)
+  			  {
+  				  boost::replace_all(tmp_str, "\"\"", "\"");
+  			  }
+  			  if (output_options[i].string_add_escape_quotes)
+  			  {
+  				  boost::replace_all(tmp_str, "\"", "\"\"");
+  			  }
               if (output_options[i].stringify)
               {
                 tmp_str = "\"" + tmp_str + "\"";
-              }
-              if (output_options[i].string_escape_quotes2)
-              {
-                boost::replace_all(tmp_str, "\"", "\"\"");
-                tmp_str = "'" + tmp_str + "'";
               }
               if (output_options[i].stringify2)
               {
