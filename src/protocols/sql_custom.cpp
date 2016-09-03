@@ -184,17 +184,17 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							{
 								option.stringify = true;
 							}
-							else if	(boost::algorithm::iequals(sub_token, std::string("string_escape_quotes")) == 1)
-							{
-								option.string_escape_quotes = true;
-							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("string2")) == 1)
 							{
 								option.stringify2 = true;
 							}
-							else if	(boost::algorithm::iequals(sub_token, std::string("string_escape_quotes2")) == 1)
+							else if	(boost::algorithm::iequals(sub_token, std::string("string_add_escape_quotes")) == 1)
 							{
-								option.string_escape_quotes2 = true;
+								option.string_add_escape_quotes = true;
+							}
+							else if	(boost::algorithm::iequals(sub_token, std::string("string_remove_escape_quotes")) == 1)
+							{
+								option.string_remove_escape_quotes = true;
 							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("strip")) == 1)
 							{
@@ -261,17 +261,17 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							{
 								option.stringify = true;
 							}
-							else if	(boost::algorithm::iequals(sub_token, std::string("string_escape_quotes")) == 1)
-							{
-								option.string_escape_quotes = true;
-							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("string2")) == 1)
 							{
 								option.stringify2 = true;
 							}
-							else if	(boost::algorithm::iequals(sub_token, std::string("string_escape_quotes2")) == 1)
+							else if	(boost::algorithm::iequals(sub_token, std::string("string_add_escape_quotes")) == 1)
 							{
-								option.string_escape_quotes2 = true;
+								option.string_add_escape_quotes = true;
+							}
+							else if	(boost::algorithm::iequals(sub_token, std::string("string_remove_escape_quotes")) == 1)
+							{
+								option.string_remove_escape_quotes = true;
 							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("strip")) == 1)
 							{
@@ -474,19 +474,17 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 							tmp_str = "objNull";
 						}
 					}
-					if (sql.input_options[i].string_escape_quotes)
+					if (sql.input_options[i].string_remove_escape_quotes)
+					{
+						boost::replace_all(tmp_str, "\"\"", "\"");
+					}
+					if (sql.input_options[i].string_add_escape_quotes)
 					{
 						boost::replace_all(tmp_str, "\"", "\"\"");
-						tmp_str = "\"" + tmp_str + "\"";
 					}
 					if (sql.input_options[i].stringify)
 					{
 						tmp_str = "\"" + tmp_str + "\"";
-					}
-					if (sql.input_options[i].string_escape_quotes2)
-					{
-						boost::replace_all(tmp_str, "'", "'");
-						tmp_str = "'" + tmp_str + "'";
 					}
 					if (sql.input_options[i].stringify2)
 					{
@@ -649,7 +647,12 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 							processed_inputs[i].type = MYSQL_TYPE_NULL;
 						}
 					}
-					if (calls_itr->second.sql[sql_index].input_options[i].string_escape_quotes)
+					if (calls_itr->second.sql[sql_index].input_options[i].string_remove_escape_quotes)
+					{
+							boost::replace_all(processed_inputs[i].buffer, "\"\"", "\"");
+							processed_inputs[i].length = processed_inputs[i].buffer.size();
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].string_add_escape_quotes)
 					{
 							boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
 							processed_inputs[i].length = processed_inputs[i].buffer.size();
@@ -657,12 +660,6 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					if (calls_itr->second.sql[sql_index].input_options[i].stringify)
 					{
 							processed_inputs[i].buffer = "\"" + processed_inputs[i].buffer + "\"";
-							processed_inputs[i].length = processed_inputs[i].buffer.size();
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].string_escape_quotes2)
-					{
-							boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
-							processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
 							processed_inputs[i].length = processed_inputs[i].buffer.size();
 					}
 					if (calls_itr->second.sql[sql_index].input_options[i].stringify2)
@@ -674,7 +671,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 				try
 				{
 					session_statement_itr = &session.data->statements[callname][sql_index];
-					if (mysql_stmt_error(session_statement_itr) != 0) // Error Handling incase of Connection Lost, since previous run of Prepared Statement
+					if (session_statement_itr->errorCheck()) // Error Handling incase of Connection Lost, since previous run of Prepared Statement
 					{
 						session_statement_itr->init(session.data->connector);
 						session_statement_itr->create();

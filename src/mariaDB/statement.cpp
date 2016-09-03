@@ -201,6 +201,12 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
 }
 
 
+bool MariaDBStatement::errorCheck()
+{
+  return (mysql_stmt_error(mysql_stmt_ptr) != 0);
+}
+
+
 void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &results)
 {
   mysql_stmt_result_metadata_ptr = mysql_stmt_result_metadata(mysql_stmt_ptr);
@@ -378,19 +384,17 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
                   tmp_str = "false";
                 }
               }
-              if (output_options[i].string_escape_quotes)
-              {
-                boost::replace_all(tmp_str, "\"", "\"\"");
-                tmp_str = "\"" + tmp_str + "\"";
-              }
+              if (output_options[i].string_remove_escape_quotes)
+  			  {
+  				  boost::replace_all(tmp_str, "\"\"", "\"");
+  			  }
+  			  if (output_options[i].string_add_escape_quotes)
+  			  {
+  				  boost::replace_all(tmp_str, "\"", "\"\"");
+  			  }
               if (output_options[i].stringify)
               {
                 tmp_str = "\"" + tmp_str + "\"";
-              }
-              if (output_options[i].string_escape_quotes2)
-              {
-                boost::replace_all(tmp_str, "\"", "\"\"");
-                tmp_str = "'" + tmp_str + "'";
               }
               if (output_options[i].stringify2)
               {

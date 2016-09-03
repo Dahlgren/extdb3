@@ -37,6 +37,7 @@ public:
   unsigned long getParamsCount();
   void bindParams(std::vector<mysql_bind_param> &params);
   void execute(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &result_vec);
+  bool errorCheck();
 
 private:
   bool prepared = false;

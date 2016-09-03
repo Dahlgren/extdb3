@@ -15,10 +15,10 @@ struct sql_option
   bool timeConvert = false;
 
   bool stringify = false;
-  bool string_escape_quotes = false;
-
   bool stringify2 = false;
-  bool string_escape_quotes2 = false;
+
+  bool string_add_escape_quotes = false;
+  bool string_remove_escape_quotes = false;
 
   bool mysql_escape = false;
 
