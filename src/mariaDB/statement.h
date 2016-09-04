@@ -57,7 +57,7 @@ private:
     unsigned long      length;
     my_bool            isNull;
     my_bool            error;
-    enum_field_types   type;
+    //enum_field_types   type;
 
     std::vector<char>  buffer;
     MYSQL_TIME         buffer_mysql_time;

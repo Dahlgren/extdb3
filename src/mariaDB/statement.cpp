@@ -243,13 +243,13 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
           throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported when using Prepared Statements");
         }
         /*
-        case MYSQL_TYPE_DECIMAL:
-      	case MYSQL_TYPE_NEWDECIMAL:
-      	case MYSQL_TYPE_STRING:
-      	case MYSQL_TYPE_VAR_STRING:
-      	case MYSQL_TYPE_TINY_BLOB:
-      	case MYSQL_TYPE_MEDIUM_BLOB:
-      	case MYSQL_TYPE_BLOB:
+          case MYSQL_TYPE_DECIMAL:
+          case MYSQL_TYPE_NEWDECIMAL:
+          case MYSQL_TYPE_STRING:
+          case MYSQL_TYPE_VAR_STRING:
+          case MYSQL_TYPE_TINY_BLOB:
+          case MYSQL_TYPE_MEDIUM_BLOB:
+          case MYSQL_TYPE_BLOB:
         */
         default:
         {
@@ -267,7 +267,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
       mysql_bind_result[i].length        = &(bind_data[i].length);
       mysql_bind_result[i].is_null       = &(bind_data[i].isNull);
       mysql_bind_result[i].is_unsigned   = (fields[i].flags & UNSIGNED_FLAG) > 0;
-      mysql_bind_result[i].error         = &(bind_data[i].isNull);
+      mysql_bind_result[i].error         = &(bind_data[i].error);
   	}
 	if (mysql_stmt_bind_result(mysql_stmt_ptr, mysql_bind_result) != 0)
 	{
@@ -319,7 +319,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
             case MYSQL_TYPE_TIME:
             case MYSQL_TYPE_DATETIME:
             {
-             result.emplace_back("[" +
+                result.emplace_back("[" +
                                     std::to_string(bind_data[i].buffer_mysql_time.year) + "," +
                                     std::to_string(bind_data[i].buffer_mysql_time.month) + "," +
                                     std::to_string(bind_data[i].buffer_mysql_time.day) + "," +
@@ -327,7 +327,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
                                     std::to_string(bind_data[i].buffer_mysql_time.minute) + "," +
                                     std::to_string(bind_data[i].buffer_mysql_time.second) +
                                 "]");
-              break;
+                break;
             }
             case MYSQL_TYPE_STRING:
             case MYSQL_TYPE_VAR_STRING:
@@ -335,7 +335,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
             case MYSQL_TYPE_MEDIUM_BLOB:
             case MYSQL_TYPE_BLOB:
             {
-				      std::string tmp_str(&bind_data[i].buffer[0], bind_data[i].length);
+              std::string tmp_str(&bind_data[i].buffer[0], bind_data[i].length);
               if (output_options[i].strip)
               {
                 std::string stripped_str(tmp_str);
@@ -385,13 +385,13 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
                 }
               }
               if (output_options[i].string_remove_escape_quotes)
-  			  {
-  				  boost::replace_all(tmp_str, "\"\"", "\"");
-  			  }
-  			  if (output_options[i].string_add_escape_quotes)
-  			  {
-  				  boost::replace_all(tmp_str, "\"", "\"\"");
-  			  }
+              {
+                boost::replace_all(tmp_str, "\"\"", "\"");
+              }
+              if (output_options[i].string_add_escape_quotes)
+              {
+                boost::replace_all(tmp_str, "\"", "\"\"");
+              }
               if (output_options[i].stringify)
               {
                 tmp_str = "\"" + tmp_str + "\"";
