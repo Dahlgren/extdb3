@@ -54,7 +54,7 @@ std::unique_ptr<MariaDBPool::mariadb_session_struct> MariaDBPool::get()
 }
 
 
-void MariaDBPool::putBack(std::unique_ptr<mariadb_session_struct> &mariadb_session)
+void MariaDBPool::putBack(std::unique_ptr<mariadb_session_struct> mariadb_session)
 {
 	mariadb_session->last_used = boost::posix_time::second_clock::local_time();
 	{

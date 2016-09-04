@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -33,7 +34,7 @@ public:
 
   void init(std::string &host, unsigned int &port, std::string &user, std::string &password, std::string &db);
   std::unique_ptr<mariadb_session_struct> get();
-  void putBack(std::unique_ptr<mariadb_session_struct> &mariadb_session);
+  void putBack(std::unique_ptr<mariadb_session_struct> mariadb_session);
   void idleCleanup();
 
 private:
