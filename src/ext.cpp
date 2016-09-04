@@ -34,6 +34,7 @@
 
 Ext::Ext(std::string shared_library_path)
 {
+	uptime_start = std::chrono::steady_clock::now();
 	std::locale::global(std::locale(""));
 	mysql_library_init(0, NULL, NULL);
 
@@ -639,6 +640,25 @@ void Ext::asyncCallProtocol(const int &output_size, const std::string &protocol_
 }
 
 
+void Ext::getUPTime(std::string &token, std::string &result)
+{
+	uptime_current = std::chrono::steady_clock::now();
+	auto uptime_diff = uptime_current - uptime_start;
+	if (token == "MINUTES")
+	{
+		result = std::to_string(std::chrono::duration_cast<std::chrono::minutes>(uptime_diff).count());
+	}
+	else if (token == "HOURS")
+	{
+		result = std::to_string(std::chrono::duration_cast<std::chrono::hours>(uptime_diff).count());
+	}
+	else if (token == "SECONDS")
+	{
+		result = std::to_string(std::chrono::duration_cast<std::chrono::seconds>(uptime_diff).count());
+	}
+}
+
+
 void Ext::getLocalTime(std::string &result)
 {
 	ptime = boost::posix_time::second_clock::local_time();
@@ -867,7 +887,13 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 						switch (tokens.size())
 						{
 							case 3:
-								if (tokens[1] == "UNLOCK")
+								if (tokens[1] == "UPTIME")
+								{
+									std::string result;
+									getUPTime(tokens[2], result);
+									std::strcpy(output, result.c_str());
+								}
+								else if (tokens[1] == "UNLOCK")
 								{
 									std::strcpy(output, ("[0]"));
 									if (!(ext_info.extDB_lockCode.empty()))
@@ -927,8 +953,13 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 						switch (tokens.size())
 						{
 							case 2:
-								// LOCK / VERSION
-								if (tokens[1] == "LOCAL_TIME")
+								if (tokens[1] == "UPTIME")
+								{
+									std::string result;
+									getUPTime(tokens[2], result);
+									std::strcpy(output, result.c_str());
+								}
+								else if (tokens[1] == "LOCAL_TIME")
 								{
 									std::string result;
 									getLocalTime(result);

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <thread>
 #include <unordered_map>
 
@@ -65,6 +66,10 @@ private:
 	std::unordered_map<unsigned long, resultData> stored_results;
 	std::mutex mutex_results;  // Using Same Lock for Unique ID aswell
 
+	// UPTimer
+	std::chrono::time_point<std::chrono::steady_clock> uptime_start;
+	std::chrono::time_point<std::chrono::steady_clock> uptime_current;
+	
 	// Clock
 	boost::posix_time::ptime ptime;
 	boost::posix_time::time_facet *facet;
@@ -86,7 +91,7 @@ private:
 	void saveResult_mutexlock(const unsigned long &unique_id, const resultData &result_data);
 	void saveResult_mutexlock(std::vector<unsigned long> &unique_ids, const resultData &result_data);
 
-
+	void getUPTime(std::string &token, std::string &result);
 	void getLocalTime(std::string &result);
 	void getLocalTime(std::string &input_str, std::string &result);
 	void getUTCTime(std::string &result);
