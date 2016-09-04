@@ -953,13 +953,7 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 						switch (tokens.size())
 						{
 							case 2:
-								if (tokens[1] == "UPTIME")
-								{
-									std::string result;
-									getUPTime(tokens[2], result);
-									std::strcpy(output, result.c_str());
-								}
-								else if (tokens[1] == "LOCAL_TIME")
+								if (tokens[1] == "LOCAL_TIME")
 								{
 									std::string result;
 									getLocalTime(result);
@@ -1012,8 +1006,14 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 								}
 								break;
 							case 3:
+								if (tokens[1] == "UPTIME")
+								{
+									std::string result;
+									getUPTime(tokens[2], result);
+									std::strcpy(output, result.c_str());
+								}
 								// DATABASE
-								if (tokens[1] == "ADD_DATABASE")
+								else if (tokens[1] == "ADD_DATABASE")
 								{
 									connectDatabase(output, tokens[2], tokens[2]);
 								}
