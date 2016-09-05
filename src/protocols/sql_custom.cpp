@@ -141,7 +141,6 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 					// Fetch SQL OUTPUT OPTION
 				path = section.first + ".OUTPUT";
 				std::string output_options_str = ptree.get<std::string>(path, "");
-				ptree.get_child(section.first).erase("OUTPUT");
 
 				// Parse SQL INPUT OPTIONS
 				std::vector<std::string> tokens;
@@ -309,6 +308,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 				++num_line;
 				num_line_part = 1;
 			}
+			ptree.get_child(section.first).erase("OUTPUT");
 
 			path = section.first + ".Prepared Statement";
 			calls[section.first].preparedStatement = ptree.get(path, true);
