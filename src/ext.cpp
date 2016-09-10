@@ -681,6 +681,7 @@ void Ext::getDateAdd(std::string &token, std::string &token2, std::string &resul
 				int year = std::stoi(vec[0], nullptr);
 				year = year - 1900;
 				int month = std::stoi(vec[1], nullptr);
+				month = month - 1;
 				int day = std::stoi(vec[2], nullptr);
 				int hour = std::stoi(vec[3], nullptr);
 				int minute = std::stoi(vec[4], nullptr);
