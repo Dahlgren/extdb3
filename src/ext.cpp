@@ -669,46 +669,73 @@ void Ext::getDateAdd(std::string &token, std::string &token2, std::string &resul
 {
 	try
 	{
-		const std::locale loc = std::locale(std::locale::classic(), new boost::posix_time::time_input_facet("[%Y,%m,%d,%H,%M,%S]"));
-		std::istringstream is(token);
-		is.imbue(loc);
-		is >> ptime;
-
-		if (token2.length() > 2)
+		if (token.length() > 2)
 		{
-			token2.erase(0, 1);
-			token2.pop_back();
+			token.erase(0, 1);
+			token.pop_back();
 			std::vector<std::string> vec;
-			boost::split(vec, token2, boost::is_any_of(","));
-			if (vec.size() == 4)
+			boost::split(vec, token, boost::is_any_of(","));
+
+			if (vec.size() == 6)
 			{
-				int hours = std::stoi(vec[0], nullptr) * 24;
-				hours = hours + std::stoi(vec[1], nullptr);
-				int minutes = std::stoi(vec[2], nullptr);
-				int seconds = std::stoi(vec[3], nullptr);
+				int year = std::stoi(vec[0], nullptr);
+				year = year - 1900;
+				int month = std::stoi(vec[1], nullptr);
+				int day = std::stoi(vec[2], nullptr);
+				int hour = std::stoi(vec[3], nullptr);
+				int minute = std::stoi(vec[4], nullptr);
+				int second = std::stoi(vec[5], nullptr);
+				
+				struct tm ptime_tm = { second,minute,hour,day,month,year };
+				ptime = boost::posix_time::ptime_from_tm(ptime_tm);
 
-				boost::posix_time::time_duration diff(hours, minutes, seconds, 0);
-				ptime = ptime + diff;
+				if (token2.length() > 2)
+				{
+					token2.erase(0, 1);
+					token2.pop_back();
+					std::vector<std::string> vec;
+					boost::split(vec, token2, boost::is_any_of(","));
+					if (vec.size() == 4)
+					{
+						int hours = std::stoi(vec[0], nullptr) * 24;
+						hours = hours + std::stoi(vec[1], nullptr);
+						int minutes = std::stoi(vec[2], nullptr);
+						int seconds = std::stoi(vec[3], nullptr);
 
-				facet = new boost::posix_time::time_facet();
-				facet->format("[1,[%Y,%m,%d,%H,%M,%S]]");
-				std::stringstream ss2;
-				ss2.imbue(std::locale(std::locale::classic(), facet));
-				ss2 << ptime;
-				result = ss2.str();
-			} else {
+						boost::posix_time::time_duration diff(hours, minutes, seconds, 0);
+						ptime = ptime + diff;
+
+						facet = new boost::posix_time::time_facet();
+						facet->format("[1,[%Y,%m,%d,%H,%M,%S]]");
+						std::stringstream ss2;
+						ss2.imbue(std::locale(std::locale::classic(), facet));
+						ss2 << ptime;
+						result = ss2.str();
+					}
+					else {
+						result = "[0,\"Error Invalid Format\"]";
+						#ifdef DEBUG_TESTING
+							console->info("extDB3: addDate: invalid input: {0}", token2);
+						#endif
+						logger->info("extDB3: addDate: invalid input: {0}", token2);
+					}
+				}
+				else {
+					result = "[0,\"Error Invalid Format\"]";
+					#ifdef DEBUG_TESTING
+						console->info("extDB3: addDate: invalid input2: {0}", token2);
+					#endif
+					logger->info("extDB3: addDate: invalid input2: {0}", token2);
+				}
+			}
+			else {
 				result = "[0,\"Error Invalid Format\"]";
 				#ifdef DEBUG_TESTING
-					console->info("extDB3: addDate: invalid input: {0}", token2);
+					console->info("extDB3: addDate: invalid input3: {0}", token);
 				#endif
-				logger->info("extDB3: addDate: invalid input: {0}", token2);
+				logger->info("extDB3: addDate: invalid input3: {0}", token);
 			}
-		} else {
-			result = "[0,\"Error Invalid Format\"]";
-			#ifdef DEBUG_TESTING
-				console->info("extDB3: addDate: invalid input2: {0}", token2);
-			#endif
-			logger->info("extDB3: addDate: invalid input2: {0}", token2);
+
 		}
 	}
 	catch(std::exception const &e)
