@@ -73,6 +73,7 @@ private:
 	// Clock
 	boost::posix_time::ptime ptime;
 	boost::posix_time::time_facet *facet;
+	
 	boost::posix_time::time_facet *facet_localtime;
 
 	void search(boost::filesystem::path &extDB_config_path, bool &conf_found, bool &conf_randomized);
@@ -96,5 +97,7 @@ private:
 	void getLocalTime(std::string &input_str, std::string &result);
 	void getUTCTime(std::string &result);
 	void getUTCTime(std::string &input_str, std::string &result);
+	
+	void getDateAdd(std::string &token, std::string &token2, std::string &result);
 
 };
