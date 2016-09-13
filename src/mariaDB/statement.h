@@ -60,6 +60,12 @@ private:
     //enum_field_types   type;
 
     std::vector<char>  buffer;
+	short int          buffer_short;
+	int                buffer_long;
+	long long int      buffer_longlong;
+	float              buffer_float;
+	double             buffer_double;
+		
     MYSQL_TIME         buffer_mysql_time;
   };
   std::vector<mysql_bind_field> bind_data;

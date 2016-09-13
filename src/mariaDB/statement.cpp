@@ -209,239 +209,289 @@ bool MariaDBStatement::errorCheck()
 
 void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &results)
 {
-
 	mysql_stmt_result_metadata_ptr = mysql_stmt_result_metadata(mysql_stmt_ptr);
-  if (mysql_stmt_result_metadata_ptr)
-  {
-    num_fields = mysql_num_fields(mysql_stmt_result_metadata_ptr);
-    fields = mysql_fetch_fields(mysql_stmt_result_metadata_ptr);
-
-    mysql_bind_result = new MYSQL_BIND[num_fields];
-    memset(mysql_bind_result, 0, sizeof(MYSQL_BIND)*num_fields);
-
-    bind_data.clear();
-    bind_data.resize(num_fields);
-
-  	std::size_t size = 0;
-  	for (unsigned int i = 0; i < num_fields; i++)
-  	{
-      // Setup Buffers
-          // MYSQL Types http://dev.mysql.com/doc/refman/5.7/en/c-api-prepared-statement-type-codes.html
-
-      switch (fields[i].type)
-      {
-        case MYSQL_TYPE_DATE:
-        case MYSQL_TYPE_TIME:
-        case MYSQL_TYPE_DATETIME:
-        {
-          mysql_bind_result[i].buffer_type = fields[i].type;
-          mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_mysql_time;
-          size = fields[i].length;
-          break;
-        }
-        case MYSQL_TYPE_LONG_BLOB:
-        {
-          throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported when using Prepared Statements");
-        }
-		case MYSQL_TYPE_STRING:
-		case MYSQL_TYPE_VAR_STRING:
-		case MYSQL_TYPE_TINY_BLOB:
-		case MYSQL_TYPE_MEDIUM_BLOB:
-		case MYSQL_TYPE_BLOB:
-		{
-			mysql_bind_result[i].buffer_type = MYSQL_TYPE_STRING;
-			size = fields[i].length;
-			bind_data[i].buffer.resize(fields[i].length + 1);
-
-			if (size == 0xFFFFFFFF) size = 0;
-			unsigned int len = static_cast<unsigned int>(size);
-			mysql_bind_result[i].buffer_length = len;
-			mysql_bind_result[i].buffer = (len > 0) ? &bind_data[i].buffer[0] : NULL;
-			break;
-		}
-        /*
-          case MYSQL_TYPE_DECIMAL:
-          case MYSQL_TYPE_NEWDECIMAL:
-        */
-        default:
-        {
-          mysql_bind_result[i].buffer_type = MYSQL_TYPE_STRING;
-          //size = fields[i].length;
-		  size = sizeof(fields[i].type);
-          bind_data[i].buffer.resize(fields[i].length + 1);
-
-          if (size == 0xFFFFFFFF) size = 0;
-          unsigned int len = static_cast<unsigned int>(size);
-          mysql_bind_result[i].buffer_length = len;
-          mysql_bind_result[i].buffer        = (len > 0) ? &bind_data[i].buffer[0] : NULL;
-          break;
-        }
-      }
-      mysql_bind_result[i].length        = &(bind_data[i].length);
-      mysql_bind_result[i].is_null       = &(bind_data[i].isNull);
-      mysql_bind_result[i].is_unsigned   = (fields[i].flags & UNSIGNED_FLAG) > 0;
-      mysql_bind_result[i].error         = &(bind_data[i].error);
-  	}
-	if (mysql_stmt_bind_result(mysql_stmt_ptr, mysql_bind_result) != 0)
+	if (mysql_stmt_result_metadata_ptr)
 	{
-		throw MariaDBStatementException1(mysql_stmt_ptr);
+		num_fields = mysql_num_fields(mysql_stmt_result_metadata_ptr);
+		fields = mysql_fetch_fields(mysql_stmt_result_metadata_ptr);
+
+		mysql_bind_result = new MYSQL_BIND[num_fields];
+		memset(mysql_bind_result, 0, sizeof(MYSQL_BIND)*num_fields);
+
+		bind_data.clear();
+		bind_data.resize(num_fields);
+
+		// Setup Buffers
+		// MYSQL Types http://dev.mysql.com/doc/refman/5.7/en/c-api-prepared-statement-type-codes.html
+		std::size_t size = 0;
+		for (unsigned int i = 0; i < num_fields; i++)
+		{
+			switch (fields[i].type)
+			{
+				case MYSQL_TYPE_DATE:
+				case MYSQL_TYPE_TIME:
+				case MYSQL_TYPE_DATETIME:
+				{
+					mysql_bind_result[i].buffer_type = fields[i].type;
+					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_mysql_time;
+					size = fields[i].length;
+					break;
+				}
+				case MYSQL_TYPE_LONG_BLOB:
+				{
+					throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported when using Prepared Statements");
+			  }
+				case MYSQL_TYPE_STRING:
+				case MYSQL_TYPE_VAR_STRING:
+				case MYSQL_TYPE_TINY_BLOB:
+				case MYSQL_TYPE_MEDIUM_BLOB:
+				case MYSQL_TYPE_BLOB:
+				{
+					mysql_bind_result[i].buffer_type = MYSQL_TYPE_STRING;
+
+					size = fields[i].length;
+					if (size == 0xFFFFFFFF) size = 0;
+					unsigned int len = static_cast<unsigned int>(size);
+
+					bind_data[i].buffer.resize(len + 1);
+					mysql_bind_result[i].buffer_length = len;
+					mysql_bind_result[i].buffer = (len > 0) ? &bind_data[i].buffer[0] : NULL;
+					break;
+				}
+
+
+				case MYSQL_TYPE_SHORT:
+				{
+					mysql_bind_result[i].buffer_type = fields[i].type;
+					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_short;
+					break;
+				}
+
+				case MYSQL_TYPE_DOUBLE:
+				{
+					mysql_bind_result[i].buffer_type = fields[i].type;
+					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_double;
+					break;
+				}
+				case MYSQL_TYPE_FLOAT:
+				{
+					mysql_bind_result[i].buffer_type = fields[i].type;
+					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_float;
+					break;
+				}
+
+				case MYSQL_TYPE_INT24:
+				case MYSQL_TYPE_LONG:
+				{
+					mysql_bind_result[i].buffer_type = fields[i].type;
+					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_long;
+					break;
+				}
+				case MYSQL_TYPE_LONGLONG:
+				{
+					mysql_bind_result[i].buffer_type = fields[i].type;
+					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_longlong;
+					break;
+				}
+				/*
+					case MYSQL_TYPE_TINY:
+					case MYSQL_TYPE_BIT:
+					case MYSQL_TYPE_NEWDECIMAL:
+				*/
+				default:
+				{
+					mysql_bind_result[i].buffer_type = MYSQL_TYPE_STRING;
+
+					size = sizeof(fields[i].type);
+					if (size == 0xFFFFFFFF) size = 0;
+					unsigned int len = static_cast<unsigned int>(size);
+
+					bind_data[i].buffer.resize(len + 1);
+					mysql_bind_result[i].buffer_length = len;
+					mysql_bind_result[i].buffer        = (len > 0) ? &bind_data[i].buffer[0] : NULL;
+					break;
+				}
+			}
+			mysql_bind_result[i].length        = &(bind_data[i].length);
+			mysql_bind_result[i].is_null       = &(bind_data[i].isNull);
+			mysql_bind_result[i].is_unsigned   = (fields[i].flags & UNSIGNED_FLAG) > 0;
+			mysql_bind_result[i].error         = &(bind_data[i].error);
+		}
+		
+		if (mysql_stmt_bind_result(mysql_stmt_ptr, mysql_bind_result) != 0)
+		{
+			throw MariaDBStatementException1(mysql_stmt_ptr);
+		}
+
+		if (mysql_stmt_execute(mysql_stmt_ptr) != 0)
+		{
+			throw MariaDBStatementException1(mysql_stmt_ptr);
+		}
+	  if (mysql_stmt_store_result(mysql_stmt_ptr))
+		{
+			throw MariaDBStatementException1(mysql_stmt_ptr);
+		}
+
+		insertID = std::to_string(mysql_stmt_insert_id(mysql_stmt_ptr));
+
+		if (mysql_stmt_result_metadata_ptr)
+		{
+			int error_code = 0;
+			while (true)
+			{
+				error_code = mysql_stmt_fetch(mysql_stmt_ptr);
+				if ((error_code !=0) && (error_code != MYSQL_NO_DATA))
+				{
+					throw MariaDBStatementException1(mysql_stmt_ptr);
+				}
+				if (error_code != 0) break;
+
+				//Process Result
+				std::vector<std::string> result;
+				output_options.resize(num_fields);
+				for (unsigned int i = 0; i < num_fields; i++)
+				{
+					if (bind_data[i].isNull)
+					{
+						if (output_options[i].nullConvert)
+						{
+							result.emplace_back("objNull");
+						} else {
+							result.emplace_back("\"\"");
+						}
+					} else {
+						switch (fields[i].type)
+						{
+							case MYSQL_TYPE_DATE:
+							case MYSQL_TYPE_TIME:
+							case MYSQL_TYPE_DATETIME:
+							{
+								result.emplace_back("[" +
+																			std::to_string(bind_data[i].buffer_mysql_time.year) + "," +
+																			std::to_string(bind_data[i].buffer_mysql_time.month) + "," +
+																			std::to_string(bind_data[i].buffer_mysql_time.day) + "," +
+																			std::to_string(bind_data[i].buffer_mysql_time.hour) + "," +
+																			std::to_string(bind_data[i].buffer_mysql_time.minute) + "," +
+																			std::to_string(bind_data[i].buffer_mysql_time.second) +
+																		"]");
+								break;
+							}
+							case MYSQL_TYPE_NULL:
+							{
+								if (output_options[i].nullConvert)
+								{
+									result.emplace_back("objNull");
+								} else {
+									result.emplace_back("\"\"");
+								}
+								break;
+							}
+
+							case MYSQL_TYPE_LONG_BLOB:
+							{
+								throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported");
+							}
+							default:
+								std::string tmp_str;
+
+								switch (fields[i].type)
+								{
+									case MYSQL_TYPE_SHORT:
+										tmp_str = std::to_string(bind_data[i].buffer_short);
+										break;
+									case MYSQL_TYPE_DOUBLE:
+										tmp_str = std::to_string(bind_data[i].buffer_double);
+										break;
+									case MYSQL_TYPE_FLOAT:
+										tmp_str = std::to_string(bind_data[i].buffer_float);
+										break;
+									case MYSQL_TYPE_INT24:
+									case MYSQL_TYPE_LONG:
+										tmp_str = std::to_string(bind_data[i].buffer_long);
+										break;
+									case MYSQL_TYPE_LONGLONG:
+										tmp_str = std::to_string(bind_data[i].buffer_longlong);
+										break;
+									default:
+										tmp_str = std::string(&bind_data[i].buffer[0], bind_data[i].length);
+								}
+
+								if (output_options[i].strip)
+								{
+									std::string stripped_str(tmp_str);
+									for (auto &strip_char : strip_chars)
+									{
+										boost::erase_all(stripped_str, std::string(1, strip_char));
+									}
+									if (stripped_str != tmp_str)
+									{
+										switch (strip_chars_mode)
+										{
+										case 2: // Log + Error
+											throw extDB3Exception("Bad Character detected from database query");
+											//case 1: // Log
+											//logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
+										}
+										tmp_str = std::move(stripped_str);
+									}
+								}
+								if (output_options[i].beguidConvert)
+								{
+									try
+									{
+										int64_t steamID = std::stoll(tmp_str, nullptr);
+										std::stringstream bestring;
+										int8_t i = 0, parts[8] = { 0 };
+										do parts[i++] = steamID & 0xFF;
+										while (steamID >>= 8);
+										bestring << "BE";
+										for (int i = 0; i < sizeof(parts); i++) {
+											bestring << char(parts[i]);
+										}
+										tmp_str = md5(bestring.str());
+									}
+									catch (std::exception const & e)
+									{
+										tmp_str = "ERROR";
+									}
+								}
+								if (output_options[i].boolConvert)
+								{
+									if (tmp_str == "1")
+									{
+										tmp_str = "true";
+									}
+									else {
+										tmp_str = "false";
+									}
+								}
+								if (output_options[i].string_remove_escape_quotes)
+								{
+									boost::replace_all(tmp_str, "\"\"", "\"");
+								}
+								if (output_options[i].string_add_escape_quotes)
+								{
+									boost::replace_all(tmp_str, "\"", "\"\"");
+								}
+								if (output_options[i].stringify)
+								{
+									tmp_str = "\"" + tmp_str + "\"";
+								}
+								if (output_options[i].stringify2)
+								{
+									tmp_str = "'" + tmp_str + "'";
+								}
+								result.push_back(std::move(tmp_str));
+						}
+					}
+				}
+				results.push_back(std::move(result));
+			}
+		}
+
+		mysql_free_result(mysql_stmt_result_metadata_ptr);
+		mysql_stmt_result_metadata_ptr = NULL;
+		delete[] mysql_bind_result;
+		bind_data.clear();
 	}
-  };
-
-  if (mysql_stmt_execute(mysql_stmt_ptr) != 0)
-  {
-    throw MariaDBStatementException1(mysql_stmt_ptr);
-  }
-  if (mysql_stmt_store_result(mysql_stmt_ptr))
-  {
-    throw MariaDBStatementException1(mysql_stmt_ptr);
-  }
-
-  insertID = std::to_string(mysql_stmt_insert_id(mysql_stmt_ptr));
-
-  if (mysql_stmt_result_metadata_ptr)
-  {
-    int error_code = 0;
-    while (true)
-    {
-    	error_code = mysql_stmt_fetch(mysql_stmt_ptr);
-      if ((error_code !=0) && (error_code != MYSQL_DATA_TRUNCATED) && (error_code != MYSQL_NO_DATA))
-      {
-        throw MariaDBStatementException1(mysql_stmt_ptr);
-      }
-      if ((error_code != 0) && (error_code != MYSQL_DATA_TRUNCATED)) break; // TODO <--------- Error here
-
-      //Process Result
-      std::vector<std::string> result;
-      output_options.resize(num_fields);
-      for (unsigned int i = 0; i < num_fields; i++)
-      {
-        if (bind_data[i].isNull)
-        {
-          if (output_options[i].nullConvert)
-          {
-            result.emplace_back("objNull");
-          } else {
-            result.emplace_back("\"\"");
-          }
-        } else {
-          switch (fields[i].type)
-          {
-            case MYSQL_TYPE_DATE:
-            case MYSQL_TYPE_TIME:
-            case MYSQL_TYPE_DATETIME:
-            {
-                result.emplace_back("[" +
-                                    std::to_string(bind_data[i].buffer_mysql_time.year) + "," +
-                                    std::to_string(bind_data[i].buffer_mysql_time.month) + "," +
-                                    std::to_string(bind_data[i].buffer_mysql_time.day) + "," +
-                                    std::to_string(bind_data[i].buffer_mysql_time.hour) + "," +
-                                    std::to_string(bind_data[i].buffer_mysql_time.minute) + "," +
-                                    std::to_string(bind_data[i].buffer_mysql_time.second) +
-                                "]");
-                break;
-            }
-            case MYSQL_TYPE_STRING:
-            case MYSQL_TYPE_VAR_STRING:
-            case MYSQL_TYPE_TINY_BLOB:
-            case MYSQL_TYPE_MEDIUM_BLOB:
-            case MYSQL_TYPE_BLOB:
-            {
-              std::string tmp_str(&bind_data[i].buffer[0], bind_data[i].length);
-              if (output_options[i].strip)
-              {
-                std::string stripped_str(tmp_str);
-                for (auto &strip_char : strip_chars)
-                {
-                  boost::erase_all(stripped_str, std::string(1, strip_char));
-                }
-                if (stripped_str != tmp_str)
-                {
-                  switch (strip_chars_mode)
-                  {
-                    case 2: // Log + Error
-                      throw extDB3Exception("Bad Character detected from database query");
-                    //case 1: // Log
-                      //logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
-                  }
-                  tmp_str = std::move(stripped_str);
-                }
-              }
-              if (output_options[i].beguidConvert)
-              {
-                try
-                {
-                  int64_t steamID = std::stoll(tmp_str, nullptr);
-                  std::stringstream bestring;
-                  int8_t i = 0, parts[8] = { 0 };
-                  do parts[i++] = steamID & 0xFF;
-                  while (steamID >>= 8);
-                  bestring << "BE";
-                  for (int i = 0; i < sizeof(parts); i++) {
-                    bestring << char(parts[i]);
-                  }
-                  tmp_str = md5(bestring.str());
-                }
-                catch(std::exception const & e)
-                {
-                  tmp_str = "ERROR";
-                }
-              }
-              if (output_options[i].boolConvert)
-              {
-                if (tmp_str == "1")
-                {
-                  tmp_str = "true";
-                } else {
-                  tmp_str = "false";
-                }
-              }
-              if (output_options[i].string_remove_escape_quotes)
-              {
-                boost::replace_all(tmp_str, "\"\"", "\"");
-              }
-              if (output_options[i].string_add_escape_quotes)
-              {
-                boost::replace_all(tmp_str, "\"", "\"\"");
-              }
-              if (output_options[i].stringify)
-              {
-                tmp_str = "\"" + tmp_str + "\"";
-              }
-              if (output_options[i].stringify2)
-              {
-                tmp_str = "'" + tmp_str + "'";
-              }
-              result.push_back(std::move(tmp_str));
-              break;
-            }
-            case MYSQL_TYPE_NULL:
-            {
-              if (output_options[i].nullConvert)
-              {
-                result.emplace_back("objNull");
-              } else {
-                result.emplace_back("\"\"");
-              }
-              break;
-            }
-
-            case MYSQL_TYPE_LONG_BLOB:
-            {
-              throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported");
-            }
-            default:
-              std::string tmp_str(&bind_data[i].buffer[0], bind_data[i].length);
-              result.push_back(std::move(tmp_str));
-          }
-        }
-      }
-      results.push_back(std::move(result));
-    }
-  }
-
-  mysql_free_result(mysql_stmt_result_metadata_ptr);
-  mysql_stmt_result_metadata_ptr = NULL;
-  delete[] mysql_bind_result;
-  bind_data.clear();
 }
