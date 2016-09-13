@@ -233,8 +233,8 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 				case MYSQL_TYPE_DATETIME:
 				{
 					mysql_bind_result[i].buffer_type = fields[i].type;
-					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_mysql_time;
-					size = fields[i].length;
+					mysql_bind_result[i].buffer = &bind_data[i].buffer_mysql_time;
+					size = sizeof(MYSQL_TIME);
 					break;
 				}
 				case MYSQL_TYPE_LONG_BLOB:
@@ -248,7 +248,6 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 				case MYSQL_TYPE_BLOB:
 				{
 					mysql_bind_result[i].buffer_type = MYSQL_TYPE_STRING;
-
 					size = fields[i].length;
 					if (size == 0xFFFFFFFF) size = 0;
 					unsigned int len = static_cast<unsigned int>(size);
@@ -259,38 +258,42 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 					break;
 				}
 
-
 				case MYSQL_TYPE_SHORT:
 				{
+					mysql_bind_result[i].buffer_length = sizeof(short);
 					mysql_bind_result[i].buffer_type = fields[i].type;
-					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_short;
+					mysql_bind_result[i].buffer = &bind_data[i].buffer_short;
 					break;
 				}
 
 				case MYSQL_TYPE_DOUBLE:
 				{
+					mysql_bind_result[i].buffer_length = sizeof(double);
 					mysql_bind_result[i].buffer_type = fields[i].type;
-					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_double;
+					mysql_bind_result[i].buffer = &bind_data[i].buffer_double;
 					break;
 				}
 				case MYSQL_TYPE_FLOAT:
 				{
+					mysql_bind_result[i].buffer_length = sizeof(float);
 					mysql_bind_result[i].buffer_type = fields[i].type;
-					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_float;
+					mysql_bind_result[i].buffer = &bind_data[i].buffer_float;
 					break;
 				}
 
 				case MYSQL_TYPE_INT24:
 				case MYSQL_TYPE_LONG:
 				{
+					mysql_bind_result[i].buffer_length = sizeof(long);
 					mysql_bind_result[i].buffer_type = fields[i].type;
-					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_long;
+					mysql_bind_result[i].buffer = &bind_data[i].buffer_long;
 					break;
 				}
 				case MYSQL_TYPE_LONGLONG:
 				{
+					mysql_bind_result[i].buffer_length = sizeof(long long int);
 					mysql_bind_result[i].buffer_type = fields[i].type;
-					mysql_bind_result[i].buffer = (char *)&bind_data[i].buffer_longlong;
+					mysql_bind_result[i].buffer = &bind_data[i].buffer_longlong;
 					break;
 				}
 				/*
