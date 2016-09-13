@@ -176,8 +176,8 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
       {
         mysql_bind.buffer_type = MYSQL_TYPE_STRING;
         param.buffer_c.reset(new char[param.length+1]);
-	      //param.buffer_c = param.buffer;
-		    std::copy(param.buffer.begin(), param.buffer.end(), param.buffer_c.get());
+	    //param.buffer_c = param.buffer;
+		std::copy(param.buffer.begin(), param.buffer.end(), param.buffer_c.get());
         mysql_bind.buffer  = param.buffer_c.get();
       	mysql_bind.buffer_length = param.length;
         break;
@@ -209,7 +209,8 @@ bool MariaDBStatement::errorCheck()
 
 void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::string &strip_chars, int &strip_chars_mode, std::string &insertID, std::vector<std::vector<std::string>> &results)
 {
-  mysql_stmt_result_metadata_ptr = mysql_stmt_result_metadata(mysql_stmt_ptr);
+
+	mysql_stmt_result_metadata_ptr = mysql_stmt_result_metadata(mysql_stmt_ptr);
   if (mysql_stmt_result_metadata_ptr)
   {
     num_fields = mysql_num_fields(mysql_stmt_result_metadata_ptr);
@@ -242,19 +243,31 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
         {
           throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported when using Prepared Statements");
         }
+		case MYSQL_TYPE_STRING:
+		case MYSQL_TYPE_VAR_STRING:
+		case MYSQL_TYPE_TINY_BLOB:
+		case MYSQL_TYPE_MEDIUM_BLOB:
+		case MYSQL_TYPE_BLOB:
+		{
+			mysql_bind_result[i].buffer_type = MYSQL_TYPE_STRING;
+			size = fields[i].length;
+			bind_data[i].buffer.resize(fields[i].length + 1);
+
+			if (size == 0xFFFFFFFF) size = 0;
+			unsigned int len = static_cast<unsigned int>(size);
+			mysql_bind_result[i].buffer_length = len;
+			mysql_bind_result[i].buffer = (len > 0) ? &bind_data[i].buffer[0] : NULL;
+			break;
+		}
         /*
           case MYSQL_TYPE_DECIMAL:
           case MYSQL_TYPE_NEWDECIMAL:
-          case MYSQL_TYPE_STRING:
-          case MYSQL_TYPE_VAR_STRING:
-          case MYSQL_TYPE_TINY_BLOB:
-          case MYSQL_TYPE_MEDIUM_BLOB:
-          case MYSQL_TYPE_BLOB:
         */
         default:
         {
           mysql_bind_result[i].buffer_type = MYSQL_TYPE_STRING;
-          size = fields[i].length;
+          //size = fields[i].length;
+		  size = sizeof(fields[i].type);
           bind_data[i].buffer.resize(fields[i].length + 1);
 
           if (size == 0xFFFFFFFF) size = 0;
@@ -292,12 +305,11 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
     while (true)
     {
     	error_code = mysql_stmt_fetch(mysql_stmt_ptr);
-
       if ((error_code !=0) && (error_code != MYSQL_DATA_TRUNCATED) && (error_code != MYSQL_NO_DATA))
       {
         throw MariaDBStatementException1(mysql_stmt_ptr);
       }
-      if (error_code != 0) break;
+      if ((error_code != 0) && (error_code != MYSQL_DATA_TRUNCATED)) break; // TODO <--------- Error here
 
       //Process Result
       std::vector<std::string> result;
