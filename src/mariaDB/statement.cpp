@@ -234,13 +234,13 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 				{
 					mysql_bind_result[i].buffer_type = fields[i].type;
 					mysql_bind_result[i].buffer = &bind_data[i].buffer_mysql_time;
-					size = sizeof(MYSQL_TIME);
+					mysql_bind_result[i].buffer_length = sizeof(MYSQL_TIME);
 					break;
 				}
 				case MYSQL_TYPE_LONG_BLOB:
 				{
 					throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported when using Prepared Statements");
-			  }
+				}
 				case MYSQL_TYPE_STRING:
 				case MYSQL_TYPE_VAR_STRING:
 				case MYSQL_TYPE_TINY_BLOB:
