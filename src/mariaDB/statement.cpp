@@ -23,187 +23,186 @@ MariaDBStatement::MariaDBStatement()
 
 MariaDBStatement::~MariaDBStatement(void)
 {
-  if (mysql_stmt_result_metadata_ptr)
-  {
-    mysql_free_result(mysql_stmt_result_metadata_ptr);
-    mysql_stmt_result_metadata_ptr = NULL;
-  }
-  if (mysql_stmt_ptr)
-  {
-    mysql_stmt_close(mysql_stmt_ptr);
-  }
-  bind_data.clear();
-  if (mysql_bind_params)
-  {
-    delete[] mysql_bind_params;
-  }
+	if (mysql_stmt_result_metadata_ptr)
+	{
+		mysql_free_result(mysql_stmt_result_metadata_ptr);
+		mysql_stmt_result_metadata_ptr = NULL;
+	}
+	if (mysql_stmt_ptr)
+	{
+		mysql_stmt_close(mysql_stmt_ptr);
+	}
+	bind_data.clear();
+	if (mysql_bind_params)
+	{
+		delete[] mysql_bind_params;
+	}
 }
 
 
 void MariaDBStatement::init(MariaDBConnector &connector)
 {
-  connector_ptr = &connector;
+	connector_ptr = &connector;
 }
 
 
 void MariaDBStatement::create()
 {
-  mysql_stmt_ptr = mysql_stmt_init(connector_ptr->mysql_ptr);
-  if (!mysql_stmt_ptr)
-  {
-    throw MariaDBStatementException1(mysql_stmt_ptr);
-  }
+	mysql_stmt_ptr = mysql_stmt_init(connector_ptr->mysql_ptr);
+	if (!mysql_stmt_ptr)
+	{
+		throw MariaDBStatementException1(mysql_stmt_ptr);
+	}
 }
 
 
 void MariaDBStatement::prepare(std::string &sql_query)
 {
-  if (!prepared)
-  {
-    unsigned long len = sql_query.length();
-  	int return_code = mysql_stmt_prepare(mysql_stmt_ptr, sql_query.c_str(), len);
-    if (return_code != 0)
-    {
-      int error_code = mysql_errno(connector_ptr->mysql_ptr);
-      if ((error_code == CR_SERVER_GONE_ERROR) || (error_code == CR_SERVER_LOST))
-      {
-        return_code = mysql_stmt_prepare(mysql_stmt_ptr, sql_query.c_str(), len);
-      }
-	  if (return_code != 0) throw MariaDBStatementException0(connector_ptr->mysql_ptr);
-    }
-    prepared = true;
-  }
+	if (!prepared)
+	{
+		unsigned long len = sql_query.length();
+		int return_code = mysql_stmt_prepare(mysql_stmt_ptr, sql_query.c_str(), len);
+		if (return_code != 0)
+		{
+			int error_code = mysql_errno(connector_ptr->mysql_ptr);
+			if ((error_code == CR_SERVER_GONE_ERROR) || (error_code == CR_SERVER_LOST))
+			{
+				return_code = mysql_stmt_prepare(mysql_stmt_ptr, sql_query.c_str(), len);
+			}
+			if (return_code != 0) throw MariaDBStatementException0(connector_ptr->mysql_ptr);
+		}
+		prepared = true;
+	}
 }
 
 
 unsigned long MariaDBStatement::getParamsCount()
 {
-  return mysql_stmt_param_count(mysql_stmt_ptr);
+	return mysql_stmt_param_count(mysql_stmt_ptr);
 }
 
 
 void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param> &params)
 {
-  int params_count = mysql_stmt_param_count(mysql_stmt_ptr); // mysql_stmt_ptr->param_count;
+	int params_count = mysql_stmt_param_count(mysql_stmt_ptr); // mysql_stmt_ptr->param_count;
 
-  if (params.size() != params_count)
-  {
-	  throw extDB3Exception("SQL Invalid Number of Inputs Got " + std::to_string(params.size()) + " Expected " + std::to_string(params_count));
-  }
+	if (params.size() != params_count)
+	{
+		throw extDB3Exception("SQL Invalid Number of Inputs Got " + std::to_string(params.size()) + " Expected " + std::to_string(params_count));
+	}
 
-  delete[] mysql_bind_params;
-  mysql_bind_params = new MYSQL_BIND[params_count];
-  //memset(&mysql_bind_params, 0, sizeof(&mysql_bind_params));
+	delete[] mysql_bind_params;
+	mysql_bind_params = new MYSQL_BIND[params_count];
+	//memset(&mysql_bind_params, 0, sizeof(&mysql_bind_params));
 
-  for (int i=0 ; i<params_count ; i++)
-  {
-    MYSQL_BIND mysql_bind = {0};
-    MariaDBStatement::mysql_bind_param &param = params[i];
+	for (int i=0 ; i<params_count ; i++)
+	{
+		MYSQL_BIND mysql_bind = {0};
+		MariaDBStatement::mysql_bind_param &param = params[i];
 
-    switch (param.type)
-    {
-      case MYSQL_TYPE_DATE:
-      case MYSQL_TYPE_TIME:
-      case MYSQL_TYPE_DATETIME:
-      {
-        /*
-        unsigned int year	The year
-        unsigned int month	The month of the year
-        unsigned int day	The day of the month
-        unsigned int hour	The hour of the day
-        unsigned int minute	The minute of the hour
-        unsigned int second	The second of the minute
-        my_bool neg	A boolean flag indicating whether the time is negative
-        unsigned long second_part	The fractional part of the second in microseconds
-        */
-        if (param.buffer.size() > 2)
-        {
-          param.buffer.erase(0,1);
-          param.buffer.pop_back();
+		switch (param.type)
+		{
+			case MYSQL_TYPE_DATE:
+			case MYSQL_TYPE_TIME:
+			case MYSQL_TYPE_DATETIME:
+			{
+				/*
+				unsigned int year	The year
+				unsigned int month	The month of the year
+				unsigned int day	The day of the month
+				unsigned int hour	The hour of the day
+				unsigned int minute	The minute of the hour
+				unsigned int second	The second of the minute
+				my_bool neg	A boolean flag indicating whether the time is negative
+				unsigned long second_part	The fractional part of the second in microseconds
+				*/
+				if (param.buffer.size() > 2)
+				{
+					param.buffer.erase(0,1);
+					param.buffer.pop_back();
 
-            std::vector<std::string> tokens;
-            boost::split(tokens, param.buffer, boost::is_any_of(","));
-          unsigned int time_value;
-          for (unsigned int i = 0; i < tokens.size(); i++)
-          {
-            try
-            {
-              time_value = std::stoul(tokens[i]);
-              switch (i)
-              {
-                case 0:
-          		    param.time_buffer.year = time_value;
-                case 1:
-                  param.time_buffer.month = time_value;
-                case 2:
-                  param.time_buffer.day = time_value;
-                case 3:
-                  param.time_buffer.hour = time_value;
-                case 4:
-                  param.time_buffer.minute = time_value;
-                case 5:
-                  param.time_buffer.second = time_value;
-                default:
-                  throw extDB3Exception("Invalid Time Format: [" + param.buffer + "]");
-              }
-            }
-            catch(std::exception const &e)
-            {
-              throw extDB3Exception("Invalid Time Format: [" + param.buffer + "]");
-            }
-          }
-        }
-        mysql_bind.buffer_type = param.type;
-        mysql_bind.buffer = (char *)&(param.time_buffer);
-        break;
-      }
+					std::vector<std::string> tokens;
+					boost::split(tokens, param.buffer, boost::is_any_of(","));
+					unsigned int time_value;
+					for (unsigned int i = 0; i < tokens.size(); i++)
+					{
+						try
+						{
+							time_value = std::stoul(tokens[i]);
+							switch (i)
+							{
+								case 0:
+									param.time_buffer.year = time_value;
+								case 1:
+									param.time_buffer.month = time_value;
+								case 2:
+									param.time_buffer.day = time_value;
+								case 3:
+									param.time_buffer.hour = time_value;
+								case 4:
+									param.time_buffer.minute = time_value;
+								case 5:
+									param.time_buffer.second = time_value;
+								default:
+									throw extDB3Exception("Invalid Time Format: [" + param.buffer + "]");
+								}
+						}
+						catch(std::exception const &e)
+						{
+							throw extDB3Exception("Invalid Time Format: [" + param.buffer + "]");
+						}
+					}
+				}
+				mysql_bind.buffer_type = param.type;
+				mysql_bind.buffer = (char *)&(param.time_buffer);
+				break;
+			}
 
-      case MYSQL_TYPE_TINY:
-      case MYSQL_TYPE_SHORT:
-      case MYSQL_TYPE_INT24:
-      case MYSQL_TYPE_LONG:
-      case MYSQL_TYPE_FLOAT:
-      case MYSQL_TYPE_DOUBLE:
-      case MYSQL_TYPE_LONGLONG:
-      case MYSQL_TYPE_DECIMAL:
-      case MYSQL_TYPE_NEWDECIMAL:
-      case MYSQL_TYPE_STRING:
-      case MYSQL_TYPE_VARCHAR:
-      case MYSQL_TYPE_VAR_STRING:
-      case MYSQL_TYPE_TINY_BLOB:
-      case MYSQL_TYPE_MEDIUM_BLOB:
-      case MYSQL_TYPE_BLOB:
-      {
-        mysql_bind.buffer_type = MYSQL_TYPE_STRING;
-        param.buffer_c.reset(new char[param.length+1]);
-	    //param.buffer_c = param.buffer;
-		std::copy(param.buffer.begin(), param.buffer.end(), param.buffer_c.get());
-        mysql_bind.buffer  = param.buffer_c.get();
-      	mysql_bind.buffer_length = param.length;
-        break;
-      }
-      case MYSQL_TYPE_NULL:
-      {
-        mysql_bind.buffer_type   = param.type;
-        mysql_bind.buffer_length = 0;
-        break;
-      }
-      case MYSQL_TYPE_LONG_BLOB:
-      {
-        throw extDB3Exception("Field Type not supported: LONGBLOB/LONGTEXT");
-      }
-      default:
-        throw extDB3Exception("Unknown Field Type: " + std::to_string(param.type));
-    }
-    mysql_bind_params[i] = (std::move(mysql_bind));
-  }
-  mysql_stmt_bind_param(mysql_stmt_ptr, mysql_bind_params);
+			case MYSQL_TYPE_TINY:
+			case MYSQL_TYPE_SHORT:
+			case MYSQL_TYPE_INT24:
+			case MYSQL_TYPE_LONG:
+			case MYSQL_TYPE_FLOAT:
+			case MYSQL_TYPE_DOUBLE:
+			case MYSQL_TYPE_LONGLONG:
+			case MYSQL_TYPE_DECIMAL:
+			case MYSQL_TYPE_NEWDECIMAL:
+			case MYSQL_TYPE_STRING:
+			case MYSQL_TYPE_VARCHAR:
+			case MYSQL_TYPE_VAR_STRING:
+			case MYSQL_TYPE_TINY_BLOB:
+			case MYSQL_TYPE_MEDIUM_BLOB:
+			case MYSQL_TYPE_BLOB:
+			{
+				mysql_bind.buffer_type = MYSQL_TYPE_STRING;
+				param.buffer_c.reset(new char[param.length+1]);
+				std::copy(param.buffer.begin(), param.buffer.end(), param.buffer_c.get());
+				mysql_bind.buffer  = param.buffer_c.get();
+				mysql_bind.buffer_length = param.length;
+				break;
+			}
+			case MYSQL_TYPE_NULL:
+			{
+				mysql_bind.buffer_type   = param.type;
+				mysql_bind.buffer_length = 0;
+				break;
+			}
+			case MYSQL_TYPE_LONG_BLOB:
+			{
+				throw extDB3Exception("Field Type not supported: LONGBLOB/LONGTEXT");
+			}
+			default:
+				throw extDB3Exception("Unknown Field Type: " + std::to_string(param.type));
+		}
+		mysql_bind_params[i] = (std::move(mysql_bind));
+	}
+	mysql_stmt_bind_param(mysql_stmt_ptr, mysql_bind_params);
 }
 
 
 bool MariaDBStatement::errorCheck()
 {
-  return (mysql_stmt_error(mysql_stmt_ptr) != 0);
+	return (mysql_stmt_error(mysql_stmt_ptr) != 0);
 }
 
 

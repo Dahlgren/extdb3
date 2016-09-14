@@ -4,7 +4,7 @@ class CfgPatches
 	{
 		projectName="extDB3";
 		author="Torndeco";
-		version="1.018";
+		version="1.019";
 		requiredAddons[] = {};
 		units[] = {};
 	};
