@@ -667,6 +667,10 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 							processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
 							processed_inputs[i].length = processed_inputs[i].buffer.size();
 					}
+					if (calls_itr->second.sql[sql_index].input_options[i].timeConvert)
+					{
+						processed_inputs[i].type = MYSQL_TYPE_DATETIME;
+					}
 				}
 				try
 				{
