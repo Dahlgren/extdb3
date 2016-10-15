@@ -133,25 +133,33 @@ void MariaDBStatement::bindParams(std::vector<MariaDBStatement::mysql_bind_param
 							{
 								case 0:
 									param.time_buffer.year = time_value;
+									break;
 								case 1:
 									param.time_buffer.month = time_value;
+									break;
 								case 2:
 									param.time_buffer.day = time_value;
+									break;
 								case 3:
 									param.time_buffer.hour = time_value;
+									break;
 								case 4:
 									param.time_buffer.minute = time_value;
+									break;
 								case 5:
 									param.time_buffer.second = time_value;
+									break;
 								default:
-									throw extDB3Exception("Invalid Time Format: [" + param.buffer + "]");
+									throw extDB3Exception("Invalid Time Format1: [" + param.buffer + "]");
 								}
 						}
 						catch(std::exception const &e)
 						{
-							throw extDB3Exception("Invalid Time Format: [" + param.buffer + "]");
+							throw extDB3Exception("Invalid Time Format2: [" + param.buffer + "]");
 						}
 					}
+				} else {
+					throw extDB3Exception("Invalid Time Format3: " + param.buffer);
 				}
 				mysql_bind.buffer_type = param.type;
 				mysql_bind.buffer = (char *)&(param.time_buffer);
