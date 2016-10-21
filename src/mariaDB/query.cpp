@@ -314,18 +314,8 @@ void MariaDBQuery::get(int &check_dataType_string, bool &check_dataType_null, st
                     field_row.emplace_back("\"\"");
                   }
                 } else {
-                  switch (check_dataType_string)
-                  {
-                    case 1:
-                      field_row.emplace_back(('"' + std::move(tmp_str) + '"'));
-                      break;
-                    case 2:
-                      field_row.emplace_back(('\'' + std::move(tmp_str) + '\''));
-                      break;
-                    default:
-                      field_row.push_back(std::move(tmp_str));
-                  }
-                }
+									field_row.push_back(std::move(tmp_str));
+								}
                 break;
               }
               case MYSQL_TYPE_DATE:
