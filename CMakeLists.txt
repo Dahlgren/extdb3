@@ -32,6 +32,8 @@ endif()
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
+include_directories(${PROJECT_SOURCE_DIR}/../3rdparty)
+
 SET(COMPILE_EXTENSION TRUE CACHE BOOL "Compile extDB3")
 SET(COMPILE_TEST_APPLICATION FALSE CACHE BOOL "Compiles a test application of extDB3.")
 
@@ -129,9 +131,6 @@ if(${UNIX})
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
 endif()
 
-# SPDLOG
-set(SPDLOG_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/3rdparty/spdlog)
-include_directories(${SPDLOG_INCLUDE_DIR})
 
 # -----------------------
 # END STATIC LIBRARIES
