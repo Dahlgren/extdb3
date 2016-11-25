@@ -43,7 +43,8 @@ class SQL_CUSTOM: public AbstractProtocol
 
 			std::string strip_chars;
 			int strip_chars_mode = 0;
-
+			bool input_sqf_parser = false;
+			
 			int highest_input_value = 0;
 
 			std::vector<sql_struct> sql;

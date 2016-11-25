@@ -18,6 +18,8 @@
 #include "../mariaDB/session.h"
 #include "../md5/md5.h"
 
+#include "../sqfparser.h"
+
 
 bool SQL_CUSTOM::init(AbstractExt *extension, const std::string &database_id, const std::string &options_str)
 {
@@ -87,10 +89,12 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 		boost::property_tree::ini_parser::read_ini(config_path.string(), ptree);
 		std::string strip_chars = ptree.get("Default.Strip Chars", "");
 		int strip_chars_mode = ptree.get("Default.Strip Chars Mode", 0);
+		bool input_sqf_parser = ptree.get("Default.Input SQF Parser", false);
 
 		ptree.get_child("Default").erase("Strip Chars");
 		ptree.get_child("Default").erase("Strip Chars Mode");
 		ptree.get_child("Default").erase("Version");
+		ptree.get_child("Default").erase("Input SQF Parser");
 
 		for (auto& value : ptree.get_child("Default")) {
 			#ifdef DEBUG_TESTING
@@ -326,6 +330,10 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 			calls[section.first].strip_chars_mode = ptree.get(path, strip_chars_mode);
 			ptree.get_child(section.first).erase("Strip Chars Mode");
 
+			path = section.first + ".Input SQF Parser";
+			calls[section.first].input_sqf_parser = ptree.get(path, input_sqf_parser);
+			ptree.get_child(section.first).erase("Input SQF Parser");
+
 			for (auto& value : section.second) {
 				#ifdef DEBUG_TESTING
 					extension_ptr->console->info("extDB3: SQL_CUSTOM Config Error: Section: {0} Unknown Setting: {1}", section.first, value.first);
@@ -395,7 +403,17 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 		MariaDBSession session(database_pool);
 
 		std::vector<std::string> tokens;
-		boost::split(tokens, tokens_str, boost::is_any_of(":"));
+		if (calls_itr->second.input_sqf_parser)
+		{
+			if (found != std::string::npos)
+			{
+				tokens.push_back(callname);
+				std::string tokens_str = input_str.substr(found+1);
+				sqf::parser(tokens_str, tokens);
+			}
+		} else {
+			boost::split(tokens, input_str, boost::is_any_of(":"));
+		}
 
 		if ((tokens.size()-1) != calls_itr->second.highest_input_value)
 		{
