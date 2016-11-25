@@ -55,16 +55,16 @@ bool SQL_CUSTOM::init(AbstractExt *extension, const std::string &database_id, co
 				return loadConfig(custom_ini_path);
 			} else {
 				#ifdef DEBUG_TESTING
-					extension_ptr->console->info("extDB3: SQL_CUSTOM: Loading Template Error: Not Regular File: {0}", custom_ini_path);
+					extension_ptr->console->info("extDB3: SQL_CUSTOM: Loading Template Error: Not Regular File: {0}", custom_ini_path.string());
 				#endif
-				extension_ptr->logger->info("extDB3: SQL_CUSTOM: Loading Template Error: Not Regular File: {0}", custom_ini_path);
+				extension_ptr->logger->info("extDB3: SQL_CUSTOM: Loading Template Error: Not Regular File: {0}", custom_ini_path.string());
 				return false;
 			}
 		} else {
 			#ifdef DEBUG_TESTING
-				extension_ptr->console->info("extDB3: SQL_CUSTOM: {0} doesn't exist", custom_ini_path);
+				extension_ptr->console->info("extDB3: SQL_CUSTOM: {0} doesn't exist", custom_ini_path.string());
 			#endif
-			extension_ptr->logger->info("extDB3: SQL_CUSTOM: {0} doesn't exist", custom_ini_path);
+			extension_ptr->logger->info("extDB3: SQL_CUSTOM: {0} doesn't exist", custom_ini_path.string());
 			return false;
 		}
 	}
@@ -365,13 +365,13 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 	#endif
 
 	std::string callname;
-	std::string tokens_str;
+	//std::string tokens_str;
 	std::string insertID = "0";
 	const std::string::size_type found = input_str.find(":");
 	if (found != std::string::npos)
 	{
 		callname = input_str.substr(0, found);
-		tokens_str = input_str.substr(found+1);
+		//tokens_str = input_str.substr(found+1);
 	}	else {
 		callname = input_str;
 	}
@@ -395,7 +395,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 		MariaDBSession session(database_pool);
 
 		std::vector<std::string> tokens;
-		boost::split(tokens, input_str, boost::is_any_of(":"));
+		boost::split(tokens, tokens_str, boost::is_any_of(":"));
 
 		if ((tokens.size()-1) != calls_itr->second.highest_input_value)
 		{

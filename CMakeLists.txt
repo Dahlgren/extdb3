@@ -32,7 +32,7 @@ endif()
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
-include_directories(${PROJECT_SOURCE_DIR}/../3rdparty)
+include_directories(${PROJECT_SOURCE_DIR}/3rdparty)
 
 SET(COMPILE_EXTENSION TRUE CACHE BOOL "Compile extDB3")
 SET(COMPILE_TEST_APPLICATION FALSE CACHE BOOL "Compiles a test application of extDB3.")

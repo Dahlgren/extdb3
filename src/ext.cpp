@@ -118,11 +118,13 @@ Ext::Ext(std::string shared_library_path)
 		boost::filesystem::create_directories(log_relative_path);
 		log_relative_path /= std::to_string(tm.tm_hour) + "-" + std::to_string(tm.tm_min) + "-" + std::to_string(tm.tm_sec);
 
-		logger = spdlog::rotating_logger_mt("extDB3 File Logger", log_relative_path.make_preferred().string(), 1048576 * 100, 3, ext_info.logger_flush);
+		logger = spdlog::rotating_logger_mt("extDB3 File Logger", log_relative_path.make_preferred().string(), 1048576 * 100, 3);
+		if (ext_info.logger_flush)
+			logger->flush_on(spdlog::level::info);
 		spdlog::set_level(spdlog::level::info);
 		spdlog::set_pattern("%v");
 
-		logger->info();
+		logger->info("");
 		logger->info("extDB3: https://bitbucket.org/torndeco/extdb3/wiki/Home");
 		logger->info("extDB3: Version: {0}", EXTDB_VERSION);
 		#ifdef __GNUC__
@@ -138,7 +140,7 @@ Ext::Ext(std::string shared_library_path)
 				logger->info("extDB3: Windows Version");
 			#else
 				logger->info("extDB3: Windows Debug Version");
-				logger->info();
+				logger->info("");
 			#endif
 		#endif
 
@@ -146,10 +148,10 @@ Ext::Ext(std::string shared_library_path)
 			console->info("Welcome to extDB3 Test Application");
 			console->info("OutputSize is set to 80 for Test Application, just so it is readable");
 			console->info("OutputSize for Arma3 is more like 10k in size ");
-			console->info();
+			console->info("");
 			console->info("Typing test will spam 1:SQL:TEST<1-5>:testing");
 			console->info("This is used for poor man stress testing");
-			console->info();
+			console->info("");
 			console->info("Type 'test' for spam test");
 			console->info("Type 'quit' to exit");
 		#else
@@ -159,8 +161,8 @@ Ext::Ext(std::string shared_library_path)
 			logger->info("Message: Also leave a message if there is any particular feature you would like to see added.");
 			logger->info("Message: Thanks for all the people that have donated.");
 			logger->info("Message: Torndeco: 18/05/15");
-			logger->info();
-			logger->info();
+			logger->info("");
+			logger->info("");
 		#endif
 
 		if (!conf_found)
@@ -243,8 +245,8 @@ Ext::Ext(std::string shared_library_path)
 				threads.create_thread(boost::bind(&boost::asio::io_service::run, &io_service));
 			}
 
-			logger->info();
-			logger->info();
+			logger->info("");
+			logger->info("");
 
 			#ifdef _WIN32
 				spdlog::set_pattern("[%H:%M:%S:%f %z] [Thread %t] %v");

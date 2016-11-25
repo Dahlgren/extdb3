@@ -21,7 +21,9 @@ bool LOG::init(AbstractExt *extension, const std::string &database_id, const std
 			customlog /= init_str;
 			if (customlog.parent_path().make_preferred().string() == extension_ptr->ext_info.log_path)
 			{
-				logger = spdlog::rotating_logger_mt(init_str, customlog.make_preferred().string(), 1048576 * 100, 3, extension_ptr->ext_info.logger_flush);
+				logger = spdlog::rotating_logger_mt(init_str, customlog.make_preferred().string(), 1048576 * 100, 3);
+				if (extension_ptr->ext_info.logger_flush)
+					logger->flush_on(spdlog::level::info);
 				status = true;
 			}
 		}
