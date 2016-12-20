@@ -22,7 +22,11 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 
 #Check for 32bit vs. 64bit system
 if (CMAKE_SIZEOF_VOID_P EQUAL 8) #64bit
-	message(FATAL_ERROR "Warning: You are on a 64-bit system, make sure you are pulling in the appropriate 32-bit libraries.")
+	if(${WIN32})
+		message(ERROR "Warning: You are on a 64-bit system, make sure you are pulling in the appropriate 64-bit libraries.")
+	else()
+		message(FATAL_ERROR "Warning: Arma Linuxserver doesn't support 64bit yet.")
+	endif()
 elseif (CMAKE_SIZEOF_VOID_P EQUAL 4) #32bit
 	message(STATUS "You are on a 32-bit system.")
 else()
@@ -39,6 +43,10 @@ SET(COMPILE_TEST_APPLICATION FALSE CACHE BOOL "Compiles a test application of ex
 
 SET(DEBUG_LOGGING FALSE CACHE BOOL "Enable Debug Logging.")
 SET(DEBUG_TESTING FALSE CACHE BOOL "Enable Extra Console Output.")
+
+if(${WIN32})
+	set(TBBMALLOC_OFFICAL FALSE CACHE BOOL "Use Offical TTBMalloc")
+endif()
 
 
 if (DEBUG_LOGGING)
@@ -141,15 +149,28 @@ endif()
 # START DYNAMIC LIBRARIES
 # -----------------------
 
+set (TBB_SEARCH TRUE)
 add_definitions(-D TBB_MALLOC)
 if(${WIN32})
- set(TBB_ROOT "C:/local/tbb2017_20160916oss")
+	if(TBBMALLOC_OFFICAL)
+	else()
+		if (CMAKE_CL_64)
+			set(TBB_MALLOC_LIBRARY "C:/local/tbb2017_20161128oss/build/vs2012/x64/Release/tbbmalloc_x64.dll")
+		else()
+			set(TBB_MALLOC_LIBRARY "C:/local/tbb2017_20161128oss/build/vs2012/Win32/Release/tbbmalloc.dll")
+		endif()
+		include_directories("C:/local/tbb2017_20161128oss/include")
+		set (TBB_SEARCH FALSE)
+	endif()
 endif()
-include(FindTBB)
-if(TBB_FOUND)
- include_directories(${TBB_INCLUDE_DIRS})
-else()
- message(FATAL_ERROR "\nIntel TBB not found\n Please Set TBB_ROOT")
+
+if(TBB_SEARCH)
+	include(FindTBB)
+	if(TBB_FOUND)
+		include_directories(${TBB_INCLUDE_DIRS})
+	else()
+	 message(FATAL_ERROR "\nIntel TBB not found\n Please Set TBB_ROOT")
+	endif()
 endif()
 
 # -----------------------
