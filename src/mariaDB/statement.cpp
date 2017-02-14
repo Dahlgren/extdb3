@@ -247,6 +247,8 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 			{
 				throw extDB3Exception("MYSQL_TYPE_LONG_BLOB type not supported when using Prepared Statements");
 			}
+			case MYSQL_TYPE_NEWDECIMAL:
+			case MYSQL_TYPE_DECIMAL:
 			case MYSQL_TYPE_STRING:
 			case MYSQL_TYPE_VAR_STRING:
 			case MYSQL_TYPE_TINY_BLOB:
