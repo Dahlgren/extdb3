@@ -397,7 +397,7 @@ void Ext::connectDatabase(char *output, const std::string &database_conf, const 
 			#ifdef DEBUG_TESTING
 				console->info("extDB3: Config Error: {0}: {1}", database_conf, e.what());
 			#endif
-			logger->info("extDB3: Database Type: {0}: {1}", database_conf, e.what());
+			logger->info("extDB3: Config Error: {0}: {1}", database_conf, e.what());
 		}
 		catch (MariaDBConnectorException &e)
 		{
