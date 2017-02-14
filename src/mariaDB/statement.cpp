@@ -9,8 +9,7 @@
 #include <sstream>
 
 #include <boost/algorithm/string.hpp>
-#include <ma_errmsg.h>
-//#include <errmsg.h>
+#include <errmsg.h>
 
 #include "exceptions.h"
 #include "../md5/md5.h"
