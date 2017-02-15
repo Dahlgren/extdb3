@@ -514,7 +514,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 						mysql_real_escape_string(session.data->connector.mysql_ptr, &tmp_escaped_str[0], tmp_str.c_str(), tmp_str.length());
 						tmp_str = std::move(tmp_escaped_str);
 					}
-					boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i+1) + "$"), tmp_str);  //TODO Improve this
+					boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i + 1) + "$"), tmp_str.c_str());  //TODO Improve this
 				}
 				try
 				{
