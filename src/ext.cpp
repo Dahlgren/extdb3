@@ -98,12 +98,15 @@ Ext::Ext(std::string shared_library_path)
 		//spdlog::set_async_mode(q_size);
 
 		#ifdef DEBUG_TESTING
-			auto console_temp = spdlog::stdout_logger_mt("extDB Console logger");
+			spdlog::drop("extDB3 Console logger");
+			auto console_temp = spdlog::stdout_logger_mt("extDB3 Console logger");
 			console.swap(console_temp);
 		#elif TEST_APP
-			auto console_temp = spdlog::stdout_logger_mt("extDB Console logger");
+			spdlog::drop("extDB3 Console logger");{
+			auto console_temp = spdlog::stdout_logger_mt("extDB3 Console logger");
 			console.swap(console_temp);
 		#endif
+
 		//		File Logger
 		std::time_t t = std::time(nullptr);
 		std::tm tm = *std::localtime(&t); //Not Threadsafe
@@ -118,7 +121,9 @@ Ext::Ext(std::string shared_library_path)
 		boost::filesystem::create_directories(log_relative_path);
 		log_relative_path /= std::to_string(tm.tm_hour) + "-" + std::to_string(tm.tm_min) + "-" + std::to_string(tm.tm_sec);
 
+		spdlog::drop("extDB3 File logger");
 		logger = spdlog::rotating_logger_mt("extDB3 File Logger", log_relative_path.make_preferred().string(), 1048576 * 100, 3);
+		
 		if (ext_info.logger_flush)
 			logger->flush_on(spdlog::level::info);
 		spdlog::set_level(spdlog::level::info);
