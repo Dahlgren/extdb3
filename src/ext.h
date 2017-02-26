@@ -93,6 +93,7 @@ private:
 	void saveResult_mutexlock(std::vector<unsigned long> &unique_ids, const resultData &result_data);
 
 	void getUPTime(std::string &token, std::string &result);
+	void getUPTime2(std::string &token, std::string &result);
 	void getLocalTime(std::string &result);
 	void getLocalTime(std::string &input_str, std::string &result);
 	void getUTCTime(std::string &result);

@@ -672,6 +672,31 @@ void Ext::getUPTime(std::string &token, std::string &result)
 }
 
 
+void Ext::getUPTime2(std::string &token, std::string &result)
+{
+	uptime_current = std::chrono::steady_clock::now();
+	auto uptime_diff = uptime_current - uptime_start;
+	if (token == "MINUTES")
+	{
+		result = "[1," + std::to_string(std::chrono::duration_cast<std::chrono::minutes>(uptime_diff).count()) + "]";
+	}
+	else if (token == "HOURS")
+	{
+		result = "[1," + std::to_string(std::chrono::duration_cast<std::chrono::hours>(uptime_diff).count()) + "]";
+	}
+	else if (token == "SECONDS")
+	{
+		result = result = "[1," + std::to_string(std::chrono::duration_cast<std::chrono::seconds>(uptime_diff).count()) + "]";
+	} else {
+		result = "[0,\"Error Invalid Format\"]";
+		#ifdef DEBUG_TESTING
+			console->info("extDB3: getUPTime: invalid input: {0}", token);
+		#endif
+		logger->info("extDB3: getUPTime: invalid input: {0}", token);
+	}
+}
+
+
 void Ext::getDateAdd(std::string &token, std::string &token2, std::string &result)
 {
 	try
@@ -996,7 +1021,13 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 								}
 								break;
 							case 3:
-								if (tokens[1] == "UPTIME")
+								if (tokens[1] == "UPTIME2")
+								{
+									std::string result;
+									getUPTime2(tokens[2], result);
+									std::strcpy(output, result.c_str());
+								}
+								else if (tokens[1] == "UPTIME")
 								{
 									std::string result;
 									getUPTime(tokens[2], result);
