@@ -35,7 +35,9 @@
 Ext::Ext(std::string shared_library_path)
 {
 	uptime_start = std::chrono::steady_clock::now();
+	std::setlocale(LC_ALL, "");
 	std::locale::global(std::locale(""));
+	std::setlocale(LC_NUMERIC, "C");
 	mysql_library_init(0, NULL, NULL);
 
 	try
@@ -1033,6 +1035,18 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 									getUPTime(tokens[2], result);
 									std::strcpy(output, result.c_str());
 								}
+								else if (tokens[1] == "LOCAL_TIME")
+								{
+									std::string result;
+									getLocalTime(tokens[2], result);
+									std::strcpy(output, result.c_str());
+								}
+								else if (tokens[1] == "UTC_TIME")
+								{
+									std::string result;
+									getUTCTime(tokens[2], result);
+									std::strcpy(output, result.c_str());
+								}
 								else if (tokens[1] == "UNLOCK")
 								{
 									std::strcpy(output, ("[0]"));
@@ -1150,6 +1164,18 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 								{
 									std::string result;
 									getUPTime(tokens[2], result);
+									std::strcpy(output, result.c_str());
+								}
+								else if (tokens[1] == "LOCAL_TIME")
+								{
+									std::string result;
+									getLocalTime(tokens[2], result);
+									std::strcpy(output, result.c_str());
+								}
+								else if (tokens[1] == "UTC_TIME")
+								{
+									std::string result;
+									getUTCTime(tokens[2], result);
 									std::strcpy(output, result.c_str());
 								}
 								// DATABASE
