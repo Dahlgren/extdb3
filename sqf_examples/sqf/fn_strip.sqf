@@ -11,10 +11,7 @@
 			
 */
 
-private["_string","_array"];
-
 private _string = (_this select 0);
-
 private _array = toArray _string;
 {
 	if (_x == 58) then

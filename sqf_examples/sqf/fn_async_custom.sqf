@@ -7,15 +7,13 @@
 	Gets result via extDB  4:x + uses 5:x if message is Multi-Part
 
 	Parameters:
-		0: STRING (Query to be ran).
-		1: INTEGER (1 = ASYNC + not return for update/insert, 2 = ASYNC + return for query's).
+		0: INTEGER (1 = ASYNC + not return for update/insert, 2 = ASYNC + return for query's).
+		1: STRING (Query to be ran).
 */
 
-private["","_mode","_return"];
-
 if (!params [
-	["_queryStmt", "", [""]],
-	["_mode", 0, [0]]
+	["_mode", 0, [0]],
+	["_queryStmt", "", [""]]
 ]) exitWith {};
 
 private _key = "extDB3" callExtension format["%1:%2:%3",_mode, "CUSTOM", _queryStmt];
