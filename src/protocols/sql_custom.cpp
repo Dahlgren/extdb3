@@ -109,6 +109,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 
 			int num_line = 1;
 			int num_line_part = 1;
+			int highest_input_value = 0;
 			std::string path;
 
 			while(true)
@@ -157,7 +158,6 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 				};
 				if (!(input_options_str.empty()))
 				{
-					int highest_input_value = 0;
 					boost::split(tokens, input_options_str, boost::is_any_of(","));
 					for (auto &token : tokens)
 					{
