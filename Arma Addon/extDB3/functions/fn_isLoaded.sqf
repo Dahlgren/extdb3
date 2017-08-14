@@ -1,2 +1,2 @@
 // Returns true/false is extension loaded ok
-extDB3_var_loaded
+call extDB3_var_loaded
