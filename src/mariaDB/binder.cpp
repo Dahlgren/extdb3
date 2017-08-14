@@ -8,33 +8,33 @@
 
 MariaDBBinder::MariaDBBinder(MYSQL *mysql_ptr, std::size_t size) : mysql_ptr(mysql_ptr), size(size)
 {
-  mysql_binds = new MYSQL_BIND [size];
+	mysql_binds = new MYSQL_BIND [size];
 }
 
 
 MariaDBBinder::~MariaDBBinder(void)
 {
-  delete[] mysql_binds;
+	delete[] mysql_binds;
 }
 
 
 void MariaDBBinder::clear()
 {
-  delete[] mysql_binds;
-  mysql_binds = new MYSQL_BIND[size];
+	delete[] mysql_binds;
+	mysql_binds = new MYSQL_BIND[size];
 }
 
 
 void MariaDBBinder::binder(std::size_t &pos, enum_field_types type, const void* buffer, int length)
 {
-  MYSQL_BIND mysql_bind = {0};
+	MYSQL_BIND mysql_bind = {0};
 
 	mysql_bind.buffer_type   = type;
 	mysql_bind.buffer  = const_cast<void*>(buffer);
 	mysql_bind.buffer_length = length;
 	mysql_bind.is_unsigned   = false;
 
-  mysql_binds[pos] = (std::move(mysql_bind));
+	mysql_binds[pos] = (std::move(mysql_bind));
 }
 
 /*
@@ -75,11 +75,11 @@ MYSQL_TYPE_NULL
 
 void MariaDBBinder::bind(std::size_t pos)
 {
-  binder(pos, MYSQL_TYPE_NULL, 0, 0);
+	binder(pos, MYSQL_TYPE_NULL, 0, 0);
 }
 
 
 void MariaDBBinder::bind(std::size_t pos, const std::string& str)
 {
-  binder(pos, MYSQL_TYPE_STRING, str.c_str(), str.size());
+	binder(pos, MYSQL_TYPE_STRING, str.c_str(), str.size());
 }

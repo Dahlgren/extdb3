@@ -11,10 +11,10 @@
 class MariaDBSession
 {
 public:
-  MariaDBSession(MariaDBPool *database_pool);
-  ~MariaDBSession();
+	MariaDBSession(MariaDBPool *database_pool);
+	~MariaDBSession();
 
-  std::unique_ptr<MariaDBPool::mariadb_session_struct> data;
+	std::unique_ptr<MariaDBPool::mariadb_session_struct> data;
 private:
-  MariaDBPool *database_pool_ptr;
+	MariaDBPool *database_pool_ptr;
 };

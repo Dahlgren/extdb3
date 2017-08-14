@@ -77,7 +77,7 @@ Ext::Ext(std::string shared_library_path)
 			// Only Gonna Randomize Once, Keeps things Simple
 			{
 				std::string chars("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-								  "1234567890");
+									"1234567890");
 				// Skipping Lowercase, this function only for arma2 + extensions only available on windows.
 				boost::random::random_device rng;
 				boost::random::uniform_int_distribution<> index_dist(0, chars.size() - 1);
@@ -336,7 +336,7 @@ void Ext::idleCleanup(const boost::system::error_code& ec)
 	{
 		for(auto &dbpool : mariadb_databases)
 		{
-		    dbpool.second.idleCleanup();
+				dbpool.second.idleCleanup();
 		}
 		std::lock_guard<std::mutex> lock(mutex_mariadb_idle_cleanup_timer);
 		{

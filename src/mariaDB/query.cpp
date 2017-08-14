@@ -30,7 +30,7 @@ MariaDBQuery::~MariaDBQuery(void)
 
 void MariaDBQuery::init(MariaDBConnector &connector)
 {
-  connector_ptr = &connector;
+	connector_ptr = &connector;
 }
 
 
@@ -265,162 +265,162 @@ void MariaDBQuery::get(int &check_dataType_string, bool &check_dataType_null, st
 					std::vector<std::string> field_row;
 					for (unsigned int i = 0; i < num_fields; i++)
 					{
-					  if (!(row[i]))
-					  {
-					    if (check_dataType_null)
-					    {
-					      field_row.emplace_back("objNull");
-					    } else {
-					      field_row.emplace_back("\"\"");
-					    }
-					  } else {
-					    switch(fields[i].type)
-					    {
-					      case MYSQL_TYPE_VAR_STRING:
-					      {
-					        std::string tmp_str(row[i]);
-					        if (tmp_str.empty())
-					        {
-					          if (check_dataType_null)
-					          {
-					            field_row.emplace_back("objNull");
-					          } else {
-					            field_row.emplace_back("\"\"");
-					          }
-					        } else {
-					          switch (check_dataType_string)
-					          {
-					            case 1:
-					              field_row.emplace_back(('"' + std::move(tmp_str) + '"'));
-					              break;
-					            case 2:
-					              field_row.emplace_back(('\'' + std::move(tmp_str) + '\''));
-					              break;
-					            default:
-					              field_row.push_back(std::move(tmp_str));
-					          }
-					        }
-					        break;
-					      };
-					      case MYSQL_TYPE_TINY_BLOB:
-					      case MYSQL_TYPE_MEDIUM_BLOB:
-					      case MYSQL_TYPE_BLOB:
-					      {
-					        std::string tmp_str(row[i]);
-					        if (tmp_str.empty())
-					        {
-					          if (check_dataType_null)
-					          {
-					            field_row.emplace_back("objNull");
-					          } else {
-					            field_row.emplace_back("\"\"");
-					          }
-					        } else {
+						if (!(row[i]))
+						{
+							if (check_dataType_null)
+							{
+								field_row.emplace_back("objNull");
+							} else {
+								field_row.emplace_back("\"\"");
+							}
+						} else {
+							switch(fields[i].type)
+							{
+								case MYSQL_TYPE_VAR_STRING:
+								{
+									std::string tmp_str(row[i]);
+									if (tmp_str.empty())
+									{
+										if (check_dataType_null)
+										{
+											field_row.emplace_back("objNull");
+										} else {
+											field_row.emplace_back("\"\"");
+										}
+									} else {
+										switch (check_dataType_string)
+										{
+											case 1:
+												field_row.emplace_back(('"' + std::move(tmp_str) + '"'));
+												break;
+											case 2:
+												field_row.emplace_back(('\'' + std::move(tmp_str) + '\''));
+												break;
+											default:
+												field_row.push_back(std::move(tmp_str));
+										}
+									}
+									break;
+								};
+								case MYSQL_TYPE_TINY_BLOB:
+								case MYSQL_TYPE_MEDIUM_BLOB:
+								case MYSQL_TYPE_BLOB:
+								{
+									std::string tmp_str(row[i]);
+									if (tmp_str.empty())
+									{
+										if (check_dataType_null)
+										{
+											field_row.emplace_back("objNull");
+										} else {
+											field_row.emplace_back("\"\"");
+										}
+									} else {
 										field_row.push_back(std::move(tmp_str));
 									}
-					        break;
-					      }
-					      case MYSQL_TYPE_DATE:
-					      {
-					        try
-					        {
-					          std::istringstream is(row[i]);
-					          is.imbue(loc_date);
-					          boost::posix_time::ptime ptime;
-					          is >> ptime;
+									break;
+								}
+								case MYSQL_TYPE_DATE:
+								{
+									try
+									{
+										std::istringstream is(row[i]);
+										is.imbue(loc_date);
+										boost::posix_time::ptime ptime;
+										is >> ptime;
 
-					          std::stringstream stream;
-					          facet = new boost::posix_time::time_facet();
-					          facet->format("[%Y,%m,%d]");
-					          stream.imbue(std::locale(std::locale::classic(), facet));
-					          stream << ptime;
-					          std::string tmp_str = stream.str();
-					          if (tmp_str != "not-a-date-time")
-					          {
-					            field_row.push_back(std::move(tmp_str));
-					          } else {
-					            field_row.emplace_back("[]");
-					          }
-					        }
-					        catch(std::exception& e)
-					        {
-					          field_row.emplace_back("[]");
-					        }
-					        break;
-					      }
-					      case MYSQL_TYPE_TIMESTAMP:
-					      case MYSQL_TYPE_DATETIME:
-					      {
-					        try
-					        {
-					          std::istringstream is(row[i]);
-					          is.imbue(loc_datetime);
-					          boost::posix_time::ptime ptime;
-					          is >> ptime;
+										std::stringstream stream;
+										facet = new boost::posix_time::time_facet();
+										facet->format("[%Y,%m,%d]");
+										stream.imbue(std::locale(std::locale::classic(), facet));
+										stream << ptime;
+										std::string tmp_str = stream.str();
+										if (tmp_str != "not-a-date-time")
+										{
+											field_row.push_back(std::move(tmp_str));
+										} else {
+											field_row.emplace_back("[]");
+										}
+									}
+									catch(std::exception& e)
+									{
+										field_row.emplace_back("[]");
+									}
+									break;
+								}
+								case MYSQL_TYPE_TIMESTAMP:
+								case MYSQL_TYPE_DATETIME:
+								{
+									try
+									{
+										std::istringstream is(row[i]);
+										is.imbue(loc_datetime);
+										boost::posix_time::ptime ptime;
+										is >> ptime;
 
-					          std::stringstream stream;
-					          facet = new boost::posix_time::time_facet();
-					          facet->format("[%Y,%m,%d,%H,%M,%S]");
-					          stream.imbue(std::locale(std::locale::classic(), facet));
-					          stream << ptime;
-					          std::string tmp_str = stream.str();
-					          if (tmp_str != "not-a-date-time")
-					          {
-					            field_row.push_back(std::move(tmp_str));
-					          } else {
-					            field_row.emplace_back("[]");
-					          }
-					        }
-					        catch(std::exception& e)
-					        {
-					          field_row.emplace_back("[]");
-					        }
-					        break;
-					      }
-					      case MYSQL_TYPE_TIME:
-					      {
-					        try
-					        {
-					          std::istringstream is(row[i]);
-					          is.imbue(loc_time);
-					          boost::posix_time::ptime ptime;
-					          is >> ptime;
+										std::stringstream stream;
+										facet = new boost::posix_time::time_facet();
+										facet->format("[%Y,%m,%d,%H,%M,%S]");
+										stream.imbue(std::locale(std::locale::classic(), facet));
+										stream << ptime;
+										std::string tmp_str = stream.str();
+										if (tmp_str != "not-a-date-time")
+										{
+											field_row.push_back(std::move(tmp_str));
+										} else {
+											field_row.emplace_back("[]");
+										}
+									}
+									catch(std::exception& e)
+									{
+										field_row.emplace_back("[]");
+									}
+									break;
+								}
+								case MYSQL_TYPE_TIME:
+								{
+									try
+									{
+										std::istringstream is(row[i]);
+										is.imbue(loc_time);
+										boost::posix_time::ptime ptime;
+										is >> ptime;
 
-					          std::stringstream stream;
-					          facet = new boost::posix_time::time_facet();
-					          facet->format("[%H,%M,%S]");
-					          stream.imbue(std::locale(std::locale::classic(), facet));
-					          stream << ptime;
-					          std::string tmp_str = stream.str();
-					          if (tmp_str != "not-a-date-time")
-					          {
-					            field_row.push_back(std::move(tmp_str));
-					          } else {
-					            field_row.emplace_back("[]");
-					          }
-					        }
-					        catch(std::exception& e)
-					        {
-					          field_row.emplace_back("[]");
-					        }
-					        break;
-					      }
-					      case MYSQL_TYPE_NULL:
-					      {
-					        if (check_dataType_null)
-					        {
-					          field_row.emplace_back("objNull");
-					        } else {
-					          field_row.emplace_back("\"\"");
-					        }
-					        break;
-					      }
-					      default:
-					      {
-					        field_row.emplace_back(row[i]);
-					      }
-					    }
-					  }
+										std::stringstream stream;
+										facet = new boost::posix_time::time_facet();
+										facet->format("[%H,%M,%S]");
+										stream.imbue(std::locale(std::locale::classic(), facet));
+										stream << ptime;
+										std::string tmp_str = stream.str();
+										if (tmp_str != "not-a-date-time")
+										{
+											field_row.push_back(std::move(tmp_str));
+										} else {
+											field_row.emplace_back("[]");
+										}
+									}
+									catch(std::exception& e)
+									{
+										field_row.emplace_back("[]");
+									}
+									break;
+								}
+								case MYSQL_TYPE_NULL:
+								{
+									if (check_dataType_null)
+									{
+										field_row.emplace_back("objNull");
+									} else {
+										field_row.emplace_back("\"\"");
+									}
+									break;
+								}
+								default:
+								{
+									field_row.emplace_back(row[i]);
+								}
+							}
+						}
 					}
 					result_vec.push_back(std::move(field_row));
 				}

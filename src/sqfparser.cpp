@@ -86,7 +86,7 @@ inline bool sqf_extract_number(std::string &input_str, std::string::size_type &p
 				temp_str += input_str[pos];
 				break;
 			default:
-	  		--pos;
+				--pos;
 				loop = false;
 		}
 		if (!loop)
@@ -129,7 +129,7 @@ inline bool sqf_skip_number(std::string &input_str, std::string::size_type &pos)
 			case '.':
 				break;
 			default:
-	  		--pos;
+				--pos;
 				loop = false;
 		}
 		if (!loop)
