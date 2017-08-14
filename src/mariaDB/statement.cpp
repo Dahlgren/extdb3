@@ -236,6 +236,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 			{
 			case MYSQL_TYPE_DATE:
 			case MYSQL_TYPE_TIME:
+			case MYSQL_TYPE_TIMESTAMP:
 			case MYSQL_TYPE_DATETIME:
 			{
 				mysql_bind_result[i].buffer_type = fields[i].type;
@@ -377,6 +378,7 @@ void MariaDBStatement::execute(std::vector<sql_option> &output_options, std::str
 						case MYSQL_TYPE_DATE:
 						case MYSQL_TYPE_TIME:
 						case MYSQL_TYPE_DATETIME:
+						case MYSQL_TYPE_TIMESTAMP:
 						{
 							result.emplace_back("[" +
 																		std::to_string(bind_data[i].buffer_mysql_time.year) + "," +

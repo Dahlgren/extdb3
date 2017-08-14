@@ -348,6 +348,7 @@ void MariaDBQuery::get(int &check_dataType_string, bool &check_dataType_null, st
 					        }
 					        break;
 					      }
+					      case MYSQL_TYPE_TIMESTAMP:
 					      case MYSQL_TYPE_DATETIME:
 					      {
 					        try
