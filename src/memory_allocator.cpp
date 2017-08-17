@@ -17,8 +17,7 @@ void* operator new (size_t size)
 {
 	if (size == 0) size = 1;
 	void* ptr = scalable_malloc(size);
-	if (ptr == NULL)
-	{
+	if (ptr == NULL) {
 		throw std::bad_alloc();
 	}
 	return ptr;
@@ -27,8 +26,7 @@ void* operator new (size_t size)
 void* operator new[] (size_t size)
 {
 	void* ptr = scalable_malloc(size);
-	if (ptr == NULL)
-	{
+	if (ptr == NULL) {
 		throw std::bad_alloc();
 	}
 	return ptr;
@@ -37,34 +35,19 @@ void* operator new[] (size_t size)
 void* operator new (size_t size, const std::nothrow_t&)
 {
 	if (size == 0) size = 1;
-	void* ptr = scalable_malloc(size);
-	if (ptr == NULL)
-	{
+	if (void* ptr = scalable_malloc(size))
 		return ptr;
-	}
-	else
-	{
-		return NULL;
-	}
+	return NULL;
 }
 
 void* operator new[] (size_t size, const std::nothrow_t&)
 {
-	void* ptr = scalable_malloc(size);
-	if (ptr == NULL)
-	{
-		return ptr;
-	}
-	else
-	{
-		return NULL;
-	}
+	return operator new (size, std::throw)
 }
 
 void operator delete (void* ptr)
 {
-	if (ptr != NULL)
-	{
+	if (ptr != NULL) {
 		scalable_free(ptr);
 	}
 }
@@ -76,13 +59,12 @@ void operator delete[] (void* ptr)
 
 void operator delete (void* ptr, const std::nothrow_t&)
 {
-	if (ptr != NULL)
-	{
+	if (ptr != NULL) {
 		scalable_free(ptr);
 	}
 }
 
 void operator delete[] (void* ptr, const std::nothrow_t&)
 {
-	operator delete(ptr);
+	operator delete(ptr, std::nothrow);
 }
