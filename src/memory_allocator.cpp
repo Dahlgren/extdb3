@@ -42,7 +42,7 @@ void* operator new (size_t size, const std::nothrow_t&)
 
 void* operator new[] (size_t size, const std::nothrow_t&)
 {
-	return operator new (size, std::throw)
+	return operator new (size, std::nothrow);
 }
 
 void operator delete (void* ptr)
