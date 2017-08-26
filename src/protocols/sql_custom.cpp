@@ -789,7 +789,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 			result.pop_back();
 		}
 		result += "]]";
-		if (calls_itr->second.returnInsertID)
+		if ((calls_itr->second.returnInsertID) || (calls_itr->second.returnInsertIDString))
 		{
 			result += "]";
 		}
