@@ -155,7 +155,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 				if (num_line > calls[section.first].sql.size())
 				{
 					calls[section.first].sql.resize(num_line);
-				};
+				}
 				if (!(input_options_str.empty()))
 				{
 					boost::split(tokens, input_options_str, boost::is_any_of(","));
@@ -321,6 +321,10 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 			path = section.first + ".Return InsertID";
 			calls[section.first].returnInsertID = ptree.get(path, false);
 			ptree.get_child(section.first).erase("Return InsertID");
+			
+			path = section.first + ".Return InsertID String";
+			calls[section.first].returnInsertIDString = ptree.get(path, false);
+			ptree.get_child(section.first).erase("Return InsertID String");
 
 			path = section.first + ".Strip Chars";
 			calls[section.first].strip_chars = ptree.get(path, strip_chars);
@@ -738,7 +742,10 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 		if (calls_itr->second.returnInsertID)
 		{
 			result += std::move(insertID) + ",[";
-		};
+		} else if (calls_itr->second.returnInsertIDString)
+		{
+			result += "\"" + std::move(insertID) + "\",[";
+		}
 		if (result_vec.size() > 0)
 		{
 			for(auto &row: result_vec)
@@ -766,7 +773,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 		if (calls_itr->second.returnInsertID)
 		{
 			result += "]";
-		};
+		}
 		#ifdef DEBUG_TESTING
 			extension_ptr->console->info("extDB3: SQL_CUSTOM: Trace: Result: {0}", result);
 		#endif
