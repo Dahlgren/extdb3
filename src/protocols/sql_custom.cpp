@@ -201,7 +201,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("remove_quotes")) == 1)
 							{
-								option.string_escape_quotes = true;
+								option.string_remove_quotes = true;
 							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("strip")) == 1)
 							{
