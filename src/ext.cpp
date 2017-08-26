@@ -10,6 +10,7 @@
 #include <iostream>
 #include <mutex>
 #include <regex>
+#include <stdlib.h>
 #include <thread>
 
 #include <boost/algorithm/string.hpp>
@@ -987,13 +988,15 @@ void Ext::callExtension(char *output, const int &output_size, const char *functi
 				}
 				case '4': // GET -- Single-Part Message Format
 				{
-					const unsigned long unique_id = std::stoul(input_str.substr(2));
+					//const unsigned long unique_id = std::stoul(input_str.substr(2));
+					const unsigned long unique_id = strtoul (input_str.substr(2).c_str(), NULL, 0);
 					getSinglePartResult_mutexlock(output, output_size, unique_id);
 					break;
 				}
 				case '5': // GET -- Multi-Part Message Format
 				{
-					const unsigned long unique_id = std::stoul(input_str.substr(2));
+					//const unsigned long unique_id = std::stoul(input_str.substr(2));
+					const unsigned long unique_id = strtoul (input_str.substr(2).c_str(), NULL, 0);
 					getMultiPartResult_mutexlock(output, output_size, unique_id);
 					break;
 				}
