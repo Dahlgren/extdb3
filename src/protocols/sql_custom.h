@@ -40,6 +40,7 @@ class SQL_CUSTOM: public AbstractProtocol
 		{
 			bool preparedStatement = false;
 			bool returnInsertID = false;
+			bool returnInsertIDString = false;
 
 			std::string strip_chars;
 			int strip_chars_mode = 0;

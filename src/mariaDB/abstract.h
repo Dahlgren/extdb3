@@ -19,6 +19,7 @@ struct sql_option
 
 	bool string_add_escape_quotes = false;
 	bool string_remove_escape_quotes = false;
+	bool string_remove_quotes = false;
 
 	bool mysql_escape = false;
 

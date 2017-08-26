@@ -199,6 +199,10 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							{
 								option.string_remove_escape_quotes = true;
 							}
+							else if	(boost::algorithm::iequals(sub_token, std::string("remove_quotes")) == 1)
+							{
+								option.string_escape_quotes = true;
+							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("strip")) == 1)
 							{
 								option.strip = true;
@@ -275,6 +279,10 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 							else if	(boost::algorithm::iequals(sub_token, std::string("remove_escape_quotes")) == 1)
 							{
 								option.string_remove_escape_quotes = true;
+							}
+							else if	(boost::algorithm::iequals(sub_token, std::string("remove_quotes")) == 1)
+							{
+								option.string_remove_quotes = true;
 							}
 							else if	(boost::algorithm::iequals(sub_token, std::string("strip")) == 1)
 							{
@@ -504,6 +512,11 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					{
 						boost::replace_all(tmp_str, "\"", "\"\"");
 					}
+					if (sql.input_options[i].string_remove_quotes)
+					{
+						boost::replace_all(tmp_str, "\"", "");
+						boost::replace_all(tmp_str, "\'", "");
+					}
 					if (sql.input_options[i].stringify)
 					{
 						tmp_str = "\"" + tmp_str + "\"";
@@ -677,6 +690,12 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 					if (calls_itr->second.sql[sql_index].input_options[i].string_add_escape_quotes)
 					{
 							boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
+							processed_inputs[i].length = processed_inputs[i].buffer.size();
+					}
+					if (calls_itr->second.sql[sql_index].input_options[i].string_remove_quotes)
+					{
+							boost::replace_all(processed_inputs[i].buffer, "\"", "");
+							boost::replace_all(processed_inputs[i].buffer, "\'", "");
 							processed_inputs[i].length = processed_inputs[i].buffer.size();
 					}
 					if (calls_itr->second.sql[sql_index].input_options[i].stringify)
