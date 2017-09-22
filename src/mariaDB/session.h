@@ -15,6 +15,8 @@ public:
 	~MariaDBSession();
 
 	std::unique_ptr<MariaDBPool::mariadb_session_struct> data;
+
+	void resetSession();
 private:
 	MariaDBPool *database_pool_ptr;
 };

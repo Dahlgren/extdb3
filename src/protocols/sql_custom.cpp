@@ -15,7 +15,6 @@
 #include <boost/property_tree/ini_parser.hpp>
 
 #include "../mariaDB/exceptions.h"
-#include "../mariaDB/session.h"
 #include "../md5/md5.h"
 
 #include "../sqfparser.h"
@@ -374,8 +373,336 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 	}
 }
 
+bool SQL_CUSTOM::query(std::string &input_str, std::string &result, std::vector<std::vector<std::string>> &result_vec, std::vector<std::string> &tokens, MariaDBSession &session, std::string &insertID, std::unordered_map<std::string, call_struct>::iterator &calls_itr)
+{
+	// -------------------
+	// Raw SQL
+	// -------------------
+	for (auto &sql : calls_itr->second.sql)
+	{
+		std::string sql_str = sql.sql;
+		std::string tmp_str;
+		for (int i = 0; i < sql.input_options.size(); ++i)
+		{
+			int value_number = sql.input_options[i].value_number;
+			tmp_str = tokens[value_number];
+			if (sql.input_options[i].strip)
+			{
+				std::string stripped_str = tmp_str;
+				for (auto &strip_char : calls_itr->second.strip_chars)
+				{
+					boost::erase_all(stripped_str, std::string(1, strip_char));
+				}
+				if (stripped_str != tmp_str)
+				{
+					switch (calls_itr->second.strip_chars_mode)
+					{
+						case 2: // Log + Error
+							extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, tmp_str);
+							result = "[0,\"Error Strip Char Found\"]";
+							return false;
+						case 1: // Log
+							extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, tmp_str);
+					}
+					tmp_str = std::move(stripped_str);
+				}
+			}
+			if (sql.input_options[i].beguidConvert)
+			{
+				std::string beguid_str;
+				try
+				{
+					int64_t steamID = std::stoll(tmp_str, nullptr);
+					std::stringstream bestring;
+					int8_t i = 0, parts[8] = { 0 };
+					do parts[i++] = steamID & 0xFF;
+					while (steamID >>= 8);
+					bestring << "BE";
+					for (int i = 0; i < sizeof(parts); i++) {
+						bestring << char(parts[i]);
+					}
+					beguid_str = md5(bestring.str());
+				}
+				catch(std::exception const &e)
+				{
+					beguid_str = e.what();
+				}
+				tmp_str = beguid_str;
+			}
+			if (sql.input_options[i].boolConvert)
+			{
+				if (boost::algorithm::iequals(tmp_str, std::string("1")) == 1)
+				{
+					tmp_str = "true";
+				} else {
+					tmp_str = "false";
+				}
+			}
+			if (sql.input_options[i].nullConvert)
+			{
+				if (tmp_str.empty())
+				{
+					tmp_str = "objNull";
+				}
+			}
+			if (sql.input_options[i].string_remove_escape_quotes)
+			{
+				boost::replace_all(tmp_str, "\"\"", "\"");
+			}
+			if (sql.input_options[i].string_add_escape_quotes)
+			{
+				boost::replace_all(tmp_str, "\"", "\"\"");
+			}
+			if (sql.input_options[i].string_remove_quotes)
+			{
+				boost::replace_all(tmp_str, "\"", "");
+				boost::replace_all(tmp_str, "\'", "");
+			}
+			if (sql.input_options[i].stringify)
+			{
+				tmp_str = "\"" + tmp_str + "\"";
+			}
+			if (sql.input_options[i].stringify2)
+			{
+				tmp_str = "'" + tmp_str + "'";
+			}
+			if (sql.input_options[i].mysql_escape)
+			{
+				std::string tmp_escaped_str(" ", (tmp_str.length() * 2) + 1);
+				mysql_real_escape_string(session.data->connector.mysql_ptr, &tmp_escaped_str[0], tmp_str.c_str(), tmp_str.length());
+				tmp_str = std::move(tmp_escaped_str);
+			}
+			boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i + 1) + "$"), tmp_str.c_str());  //TODO Improve this
+		}
+		try
+		{
+			auto &session_query_itr = session.data->query;
+			session.data->query.send(sql_str);
+			//session.data->query.get(insertID, result_vec); // TODO: OUTPUT OPTIONS SUPPORT
+			session.data->query.get(sql.output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
+		}
+		catch (MariaDBQueryException &e)
+		{
+			#ifdef DEBUG_TESTING
+				extension_ptr->console->error("extDB3: SQL: Error MariaDBQueryException: {0}", e.what());
+				extension_ptr->console->error("extDB3: SQL: Error MariaDBQueryException: Input: {0}", input_str);
+			#endif
+			extension_ptr->logger->error("extDB3: SQL: Error MariaDBQueryException: {0}", e.what());
+			extension_ptr->logger->error("extDB3: SQL: Error MariaDBQueryException: Input: {0}", input_str);
+			result = "[0,\"Error MariaDBQueryException Exception\"]";
+			return false;
+		}
+	}
+	return true;
+}
 
-bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const bool async_method, const unsigned int unique_id)
+bool SQL_CUSTOM::preparedStatementPrepare(std::string &input_str, std::string &result, std::vector<std::vector<std::string>> &result_vec, MariaDBSession &session, MariaDBStatement *session_statement_itr, std::string callname, std::unordered_map<std::string, call_struct>::iterator &calls_itr)
+{
+	try
+	{
+		if (session.data->statements.count(callname) == 0)
+		{
+			session.data->statements[callname].resize(calls_itr->second.sql.size());
+
+			for (int sql_index = 0; sql_index < calls_itr->second.sql.size(); ++sql_index)
+			{
+				session_statement_itr = &session.data->statements[callname][sql_index];
+				session_statement_itr->init(session.data->connector);
+				session_statement_itr->create();
+				session_statement_itr->prepare(calls_itr->second.sql[sql_index].sql);
+			}
+		}
+	}
+	catch (MariaDBStatementException0 &e)
+	{
+		#ifdef DEBUG_TESTING
+			extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
+			extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
+		#endif
+		extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
+		extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
+		result = "[0,\"Error MariaDBStatementException0 Exception\"]";
+		session.resetSession();
+		return false;
+	}
+	catch (MariaDBStatementException1 &e)
+	{
+		#ifdef DEBUG_TESTING
+			extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
+			extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
+		#endif
+		extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
+		extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
+		result = "[0,\"Error MariaDBStatementException1 Exception\"]";
+		session.resetSession();
+		return false;
+	}
+	catch (extDB3Exception &e)
+	{
+		#ifdef DEBUG_TESTING
+			extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+			extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+		#endif
+		extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+		extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+		result = "[0,\"Error extDB3Exception Exception\"]";
+		session.resetSession();
+		return false;
+	}
+	return true;
+}
+
+bool SQL_CUSTOM::preparedStatementExecute(std::string &input_str, std::string &result, std::vector<std::vector<std::string>> &result_vec, MariaDBSession &session, MariaDBStatement *session_statement_itr, std::string callname, std::unordered_map<std::string, call_struct>::iterator &calls_itr, std::vector<std::string> &tokens, std::string &insertID)
+{
+	for (int sql_index = 0; sql_index < calls_itr->second.sql.size(); ++sql_index)
+	{
+		std::vector<MariaDBStatement::mysql_bind_param> processed_inputs;
+		processed_inputs.resize(calls_itr->second.sql[sql_index].input_options.size());
+		for (int i = 0; i < processed_inputs.size(); ++i)
+		{
+			processed_inputs[i].type = MYSQL_TYPE_VARCHAR;
+			processed_inputs[i].buffer = tokens[calls_itr->second.sql[sql_index].input_options[i].value_number];
+			processed_inputs[i].length = processed_inputs[i].buffer.size();
+			if (calls_itr->second.sql[sql_index].input_options[i].strip)
+			{
+				std::string stripped_str = processed_inputs[i].buffer;
+				for (auto &strip_char : calls_itr->second.strip_chars)
+				{
+					boost::erase_all(stripped_str, std::string(1, strip_char));
+				}
+				if (stripped_str != processed_inputs[i].buffer)
+				{
+					switch (calls_itr->second.strip_chars_mode)
+					{
+						case 2: // Log + Error
+							extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
+							result = "[0,\"Error Strip Char Found\"]";
+							return true;
+						case 1: // Log
+							extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
+					}
+					processed_inputs[i].buffer = std::move(stripped_str);
+					processed_inputs[i].length = processed_inputs[i].buffer.size();
+				}
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].beguidConvert)
+			{
+				std::string beguid_str;
+				try
+				{
+					int64_t steamID = std::stoll(processed_inputs[i].buffer, nullptr);
+					std::stringstream bestring;
+					int8_t i = 0, parts[8] = { 0 };
+					do parts[i++] = steamID & 0xFF;
+					while (steamID >>= 8);
+					bestring << "BE";
+					for (int i = 0; i < sizeof(parts); i++) {
+						bestring << char(parts[i]);
+					}
+					beguid_str = std::move(md5(bestring.str()));
+				}
+				catch(std::exception const &e)
+				{
+					beguid_str = "ERROR";
+				}
+				processed_inputs[i].buffer = beguid_str;
+				processed_inputs[i].length = beguid_str.size();
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].boolConvert)
+			{
+				if (boost::algorithm::iequals(processed_inputs[i].buffer, std::string("true")) == 1)
+				{
+					processed_inputs[i].buffer = "1";
+				} else {
+					processed_inputs[i].buffer = "0";
+				}
+				processed_inputs[i].length = processed_inputs[i].buffer.size();
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].nullConvert)
+			{
+				if (processed_inputs[i].buffer.empty())
+				{
+					processed_inputs[i].type = MYSQL_TYPE_NULL;
+				}
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].string_remove_escape_quotes)
+			{
+					boost::replace_all(processed_inputs[i].buffer, "\"\"", "\"");
+					processed_inputs[i].length = processed_inputs[i].buffer.size();
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].string_add_escape_quotes)
+			{
+					boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
+					processed_inputs[i].length = processed_inputs[i].buffer.size();
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].string_remove_quotes)
+			{
+					boost::replace_all(processed_inputs[i].buffer, "\"", "");
+					boost::replace_all(processed_inputs[i].buffer, "\'", "");
+					processed_inputs[i].length = processed_inputs[i].buffer.size();
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].stringify)
+			{
+					processed_inputs[i].buffer = "\"" + processed_inputs[i].buffer + "\"";
+					processed_inputs[i].length = processed_inputs[i].buffer.size();
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].stringify2)
+			{
+					processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
+					processed_inputs[i].length = processed_inputs[i].buffer.size();
+			}
+			if (calls_itr->second.sql[sql_index].input_options[i].timeConvert)
+			{
+				processed_inputs[i].type = MYSQL_TYPE_DATETIME;
+			}
+		}
+		try
+		{
+			session_statement_itr = &session.data->statements[callname][sql_index];
+			session_statement_itr->bindParams(processed_inputs);
+			session_statement_itr->execute(calls_itr->second.sql[sql_index].output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
+		}
+		catch (MariaDBStatementException0 &e)
+		{
+			#ifdef DEBUG_TESTING
+				extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
+				extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
+			#endif
+			extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
+			extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
+			result = "[0,\"Error MariaDBStatementException0 Exception\"]";
+			session.resetSession();
+			return false;
+		}
+		catch (MariaDBStatementException1 &e)
+		{
+			#ifdef DEBUG_TESTING
+				extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
+				extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
+			#endif
+			extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
+			extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
+			result = "[0,\"Error MariaDBStatementException1 Exception\"]";
+			session.resetSession();
+			return false;
+		}
+		catch (extDB3Exception &e)
+		{
+			#ifdef DEBUG_TESTING
+				extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+				extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+			#endif
+			extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
+			extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
+			result = "[0,\"Error extDB3Exception Exception\"]";
+			session.resetSession();
+			return false;
+		}
+	}
+	return true;
+}
+
+bool SQL_CUSTOM::callProtocol (std::string input_str, std::string &result, const bool async_method, const unsigned int unique_id)
 {
 	#ifdef DEBUG_TESTING
 		extension_ptr->console->info("extDB3: SQL_CUSTOM: Trace: UniqueID: {0} Input: {1}", unique_id, input_str);
@@ -395,7 +722,7 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 	}	else {
 		callname = input_str;
 	}
-	auto calls_itr = calls.find(callname);
+	std::unordered_map<std::string, SQL_CUSTOM::call_struct>::iterator calls_itr = calls.find(callname);
 	if (calls_itr == calls.end())
 	{
 		// NO CALLNAME FOUND IN PROTOCOL
@@ -434,325 +761,22 @@ bool SQL_CUSTOM::callProtocol(std::string input_str, std::string &result, const 
 
 		if (!calls_itr->second.preparedStatement)
 		{
-			// -------------------
-			// Raw SQL
-			// -------------------
-			for (auto &sql : calls_itr->second.sql)
+			if (!query(input_str, result, result_vec, tokens, session, insertID, calls_itr))
 			{
-				std::string sql_str = sql.sql;
-				std::string tmp_str;
-				for (int i = 0; i < sql.input_options.size(); ++i)
-				{
-					int value_number = sql.input_options[i].value_number;
-					tmp_str = tokens[value_number];
-					if (sql.input_options[i].strip)
-					{
-						std::string stripped_str = tmp_str;
-						for (auto &strip_char : calls_itr->second.strip_chars)
-						{
-							boost::erase_all(stripped_str, std::string(1, strip_char));
-						}
-						if (stripped_str != tmp_str)
-						{
-							switch (calls_itr->second.strip_chars_mode)
-							{
-								case 2: // Log + Error
-									extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, tmp_str);
-									result = "[0,\"Error Strip Char Found\"]";
-									return true;
-								case 1: // Log
-									extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, tmp_str);
-							}
-							tmp_str = std::move(stripped_str);
-						}
-					}
-					if (sql.input_options[i].beguidConvert)
-					{
-						std::string beguid_str;
-						try
-						{
-							int64_t steamID = std::stoll(tmp_str, nullptr);
-							std::stringstream bestring;
-							int8_t i = 0, parts[8] = { 0 };
-							do parts[i++] = steamID & 0xFF;
-							while (steamID >>= 8);
-							bestring << "BE";
-							for (int i = 0; i < sizeof(parts); i++) {
-								bestring << char(parts[i]);
-							}
-							beguid_str = md5(bestring.str());
-						}
-						catch(std::exception const &e)
-						{
-							beguid_str = e.what();
-						}
-						tmp_str = beguid_str;
-					}
-					if (sql.input_options[i].boolConvert)
-					{
-						if (boost::algorithm::iequals(tmp_str, std::string("1")) == 1)
-						{
-							tmp_str = "true";
-						} else {
-							tmp_str = "false";
-						}
-					}
-					if (sql.input_options[i].nullConvert)
-					{
-						if (tmp_str.empty())
-						{
-							tmp_str = "objNull";
-						}
-					}
-					if (sql.input_options[i].string_remove_escape_quotes)
-					{
-						boost::replace_all(tmp_str, "\"\"", "\"");
-					}
-					if (sql.input_options[i].string_add_escape_quotes)
-					{
-						boost::replace_all(tmp_str, "\"", "\"\"");
-					}
-					if (sql.input_options[i].string_remove_quotes)
-					{
-						boost::replace_all(tmp_str, "\"", "");
-						boost::replace_all(tmp_str, "\'", "");
-					}
-					if (sql.input_options[i].stringify)
-					{
-						tmp_str = "\"" + tmp_str + "\"";
-					}
-					if (sql.input_options[i].stringify2)
-					{
-						tmp_str = "'" + tmp_str + "'";
-					}
-					if (sql.input_options[i].mysql_escape)
-					{
-						std::string tmp_escaped_str(" ", (tmp_str.length() * 2) + 1);
-						mysql_real_escape_string(session.data->connector.mysql_ptr, &tmp_escaped_str[0], tmp_str.c_str(), tmp_str.length());
-						tmp_str = std::move(tmp_escaped_str);
-					}
-					boost::replace_all(sql_str, ("$CUSTOM_" + std::to_string(i + 1) + "$"), tmp_str.c_str());  //TODO Improve this
-				}
-				try
-				{
-					auto &session_query_itr = session.data->query;
-					session.data->query.send(sql_str);
-					//session.data->query.get(insertID, result_vec); // TODO: OUTPUT OPTIONS SUPPORT
-					session.data->query.get(sql.output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
-				}
-				catch (MariaDBQueryException &e)
-				{
-					#ifdef DEBUG_TESTING
-						extension_ptr->console->error("extDB3: SQL: Error MariaDBQueryException: {0}", e.what());
-						extension_ptr->console->error("extDB3: SQL: Error MariaDBQueryException: Input: {0}", input_str);
-					#endif
-					extension_ptr->logger->error("extDB3: SQL: Error MariaDBQueryException: {0}", e.what());
-					extension_ptr->logger->error("extDB3: SQL: Error MariaDBQueryException: Input: {0}", input_str);
-					result = "[0,\"Error MariaDBQueryException Exception\"]";
-					return true;
-				}
+				return true;
 			}
 		} else {
 			// -------------------
 			// Prepared Statement
 			// -------------------
 
-			MariaDBStatement *session_statement_itr;
-			
-			try
+			MariaDBStatement *session_statement_itr = nullptr;
+			if (!preparedStatementPrepare(input_str, result, result_vec, session, session_statement_itr, callname, calls_itr))
 			{
-				if (session.data->statements.count(callname) == 0)
-				{
-					session.data->statements[callname].resize(calls_itr->second.sql.size());
-
-					for (int sql_index = 0; sql_index < calls_itr->second.sql.size(); ++sql_index)
-					{
-						session_statement_itr = &session.data->statements[callname][sql_index];
-						session_statement_itr->init(session.data->connector);
-						session_statement_itr->create();
-						session_statement_itr->prepare(calls_itr->second.sql[sql_index].sql);
-					}
-				}
-			}
-			catch (MariaDBStatementException0 &e)
-			{
-				#ifdef DEBUG_TESTING
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
-				#endif
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
-				result = "[0,\"Error MariaDBStatementException0 Exception\"]";
-				session.data->statements.clear();
 				return true;
-			}
-			catch (MariaDBStatementException1 &e)
-			{
-				#ifdef DEBUG_TESTING
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
-					extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
-				#endif
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
-				extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
-				result = "[0,\"Error MariaDBStatementException1 Exception\"]";
-				session.data->statements.clear();
-				return true;
-			}
-			catch (extDB3Exception &e)
-			{
-				#ifdef DEBUG_TESTING
-					extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
-					extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
-				#endif
-				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
-				extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
-				result = "[0,\"Error extDB3Exception Exception\"]";
-				session.data->statements.clear();
-				return true;
-			}
-			
-			for (int sql_index = 0; sql_index < calls_itr->second.sql.size(); ++sql_index)
-			{
-				std::vector<MariaDBStatement::mysql_bind_param> processed_inputs;
-				processed_inputs.resize(calls_itr->second.sql[sql_index].input_options.size());
-				for (int i = 0; i < processed_inputs.size(); ++i)
+			} else {
+				if (!preparedStatementExecute(input_str, result, result_vec, session, session_statement_itr, callname, calls_itr, tokens, insertID))
 				{
-					processed_inputs[i].type = MYSQL_TYPE_VARCHAR;
-					processed_inputs[i].buffer = tokens[calls_itr->second.sql[sql_index].input_options[i].value_number];
-					processed_inputs[i].length = processed_inputs[i].buffer.size();
-					if (calls_itr->second.sql[sql_index].input_options[i].strip)
-					{
-						std::string stripped_str = processed_inputs[i].buffer;
-						for (auto &strip_char : calls_itr->second.strip_chars)
-						{
-							boost::erase_all(stripped_str, std::string(1, strip_char));
-						}
-						if (stripped_str != processed_inputs[i].buffer)
-						{
-							switch (calls_itr->second.strip_chars_mode)
-							{
-								case 2: // Log + Error
-									extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
-									result = "[0,\"Error Strip Char Found\"]";
-									return true;
-								case 1: // Log
-									extension_ptr->logger->warn("extDB3: SQL_CUSTOM: Error Bad Char Detected: Input: {0} Token: {1}", input_str, processed_inputs[i].buffer);
-							}
-							processed_inputs[i].buffer = std::move(stripped_str);
-							processed_inputs[i].length = processed_inputs[i].buffer.size();
-						}
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].beguidConvert)
-					{
-						std::string beguid_str;
-						try
-						{
-							int64_t steamID = std::stoll(processed_inputs[i].buffer, nullptr);
-							std::stringstream bestring;
-							int8_t i = 0, parts[8] = { 0 };
-							do parts[i++] = steamID & 0xFF;
-							while (steamID >>= 8);
-							bestring << "BE";
-							for (int i = 0; i < sizeof(parts); i++) {
-								bestring << char(parts[i]);
-							}
-							beguid_str = std::move(md5(bestring.str()));
-						}
-						catch(std::exception const &e)
-						{
-							beguid_str = "ERROR";
-						}
-						processed_inputs[i].buffer = beguid_str;
-						processed_inputs[i].length = beguid_str.size();
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].boolConvert)
-					{
-						if (boost::algorithm::iequals(processed_inputs[i].buffer, std::string("true")) == 1)
-						{
-							processed_inputs[i].buffer = "1";
-						} else {
-							processed_inputs[i].buffer = "0";
-						}
-						processed_inputs[i].length = processed_inputs[i].buffer.size();
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].nullConvert)
-					{
-						if (processed_inputs[i].buffer.empty())
-						{
-							processed_inputs[i].type = MYSQL_TYPE_NULL;
-						}
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].string_remove_escape_quotes)
-					{
-							boost::replace_all(processed_inputs[i].buffer, "\"\"", "\"");
-							processed_inputs[i].length = processed_inputs[i].buffer.size();
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].string_add_escape_quotes)
-					{
-							boost::replace_all(processed_inputs[i].buffer, "\"", "\"\"");
-							processed_inputs[i].length = processed_inputs[i].buffer.size();
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].string_remove_quotes)
-					{
-							boost::replace_all(processed_inputs[i].buffer, "\"", "");
-							boost::replace_all(processed_inputs[i].buffer, "\'", "");
-							processed_inputs[i].length = processed_inputs[i].buffer.size();
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].stringify)
-					{
-							processed_inputs[i].buffer = "\"" + processed_inputs[i].buffer + "\"";
-							processed_inputs[i].length = processed_inputs[i].buffer.size();
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].stringify2)
-					{
-							processed_inputs[i].buffer = "'" + processed_inputs[i].buffer + "'";
-							processed_inputs[i].length = processed_inputs[i].buffer.size();
-					}
-					if (calls_itr->second.sql[sql_index].input_options[i].timeConvert)
-					{
-						processed_inputs[i].type = MYSQL_TYPE_DATETIME;
-					}
-				}
-				try
-				{
-					session_statement_itr = &session.data->statements[callname][sql_index];
-					session_statement_itr->bindParams(processed_inputs);
-					session_statement_itr->execute(calls_itr->second.sql[sql_index].output_options, calls_itr->second.strip_chars, calls_itr->second.strip_chars_mode, insertID, result_vec);
-				}
-				catch (MariaDBStatementException0 &e)
-				{
-					#ifdef DEBUG_TESTING
-						extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
-						extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
-					#endif
-					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: {0}", e.what());
-					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException0: Input: {0}", input_str);
-					result = "[0,\"Error MariaDBStatementException0 Exception\"]";
-					session.data->statements.clear();
-					return true;
-				}
-				catch (MariaDBStatementException1 &e)
-				{
-					#ifdef DEBUG_TESTING
-						extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
-						extension_ptr->console->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
-					#endif
-					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: {0}", e.what());
-					extension_ptr->logger->error("extDB3: SQL: Error MariaDBStatementException1: Input: {0}", input_str);
-					result = "[0,\"Error MariaDBStatementException1 Exception\"]";
-					session.data->statements.clear();
-					return true;
-				}
-				catch (extDB3Exception &e)
-				{
-					#ifdef DEBUG_TESTING
-						extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
-						extension_ptr->console->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
-					#endif
-					extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: {0}", e.what());
-					extension_ptr->logger->error("extDB3: SQL: Error extDB3Exception: Input: {0}", input_str);
-					result = "[0,\"Error extDB3Exception Exception\"]";
-					session.data->statements.clear();
 					return true;
 				}
 			}
