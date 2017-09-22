@@ -341,7 +341,7 @@ void Ext::idleCleanup(const boost::system::error_code& ec)
 		}
 		std::lock_guard<std::mutex> lock(mutex_mariadb_idle_cleanup_timer);
 		{
-			mariadb_idle_cleanup_timer->expires_at(mariadb_idle_cleanup_timer->expires_at() + boost::posix_time::seconds(600));
+			mariadb_idle_cleanup_timer->expires_at(mariadb_idle_cleanup_timer->expires_at() + boost::posix_time::seconds(300));
 			mariadb_idle_cleanup_timer->async_wait(boost::bind(&Ext::idleCleanup, this, _1));
 		}
 	}

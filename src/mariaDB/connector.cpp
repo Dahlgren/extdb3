@@ -58,6 +58,11 @@ unsigned long long MariaDBConnector::getInsertId()
 	return (mysql_insert_id(mysql_ptr));
 }
 
+int MariaDBConnector::ping()
+{
+	return (mysql_ping(mysql_ptr));
+}
+
 
 std::string MariaDBConnector::escapeString(std::string &input_str)
 {

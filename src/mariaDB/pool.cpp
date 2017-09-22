@@ -70,13 +70,26 @@ void MariaDBPool::idleCleanup()
 	boost::posix_time::time_duration diff;
 	std::lock_guard<std::mutex> lock(mariadb_session_pool_mutex);
 	{
+		// Remove old connections (10 Minutes)
 		for(auto session_itr = mariadb_session_pool.end(); session_itr != mariadb_session_pool.begin(); --session_itr) {
 			diff = tick - (*session_itr)->last_used;
 			if (diff.total_seconds() > 600)
 			{
 				mariadb_session_pool.erase(mariadb_session_pool.begin(), session_itr);
 				break;
-			}
+			};
+		}
+		// Ping any connections still alive, Reconnect & Wipe Statements if Required
+		for(auto session_itr = mariadb_session_pool.begin(); session_itr != mariadb_session_pool.end(); ++session_itr) {
+			auto original_thread_id = mysql_thread_id((*session_itr)->connector.mysql_ptr);
+			if (mysql_ping((*session_itr)->connector.mysql_ptr))
+			{
+				if ((original_thread_id) != mysql_thread_id((*session_itr)->connector.mysql_ptr))
+				{
+					(*session_itr)->statements.clear();
+					mysql_reset_connection((*session_itr)->connector.mysql_ptr);
+				};
+			};
 		}
 	}
 }

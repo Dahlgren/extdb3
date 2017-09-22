@@ -19,6 +19,7 @@ public:
 	void init(std::string &host, unsigned int &port, std::string &user, std::string &password, std::string &db);
 	void connect();
 	unsigned long long getInsertId();
+	int ping();
 
 	MYSQL *mysql_ptr;
 
