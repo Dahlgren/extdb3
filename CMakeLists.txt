@@ -20,7 +20,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_CONFIGURATION_TYPES Release CACHE TYPE INTERNAL FORCE)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
 
-file(GLOB_RECURSE SOURCES src/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp src/*.h)
 
 include_directories(${PROJECT_SOURCE_DIR}/3rdparty)
 
