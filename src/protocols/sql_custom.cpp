@@ -759,27 +759,44 @@ bool SQL_CUSTOM::callProtocol (std::string input_str, std::string &result, const
 			throw extDB3Exception("Config Invalid Number Number of Inputs Got " + std::to_string(tokens.size()-1) + " Expected " + std::to_string(calls_itr->second.highest_input_value));
 		}
 
+		bool success = false;
 		if (!calls_itr->second.preparedStatement)
 		{
-			if (!query(input_str, result, result_vec, tokens, session, insertID, calls_itr))
+			for (int i = 0; i < 5; ++i)
 			{
-				return true;
+				if (!query(input_str, result, result_vec, tokens, session, insertID, calls_itr))
+				{
+					// DO NOTHING
+				} else {
+					success = true;
+					break;
+				}
 			}
+
 		} else {
 			// -------------------
 			// Prepared Statement
 			// -------------------
-
-			MariaDBStatement *session_statement_itr = nullptr;
-			if (!preparedStatementPrepare(input_str, result, result_vec, session, session_statement_itr, callname, calls_itr))
+			for (int i = 0; i < 5; ++i)
 			{
-				return true;
-			} else {
-				if (!preparedStatementExecute(input_str, result, result_vec, session, session_statement_itr, callname, calls_itr, tokens, insertID))
+				MariaDBStatement *session_statement_itr = nullptr;
+				if (!preparedStatementPrepare(input_str, result, result_vec, session, session_statement_itr, callname, calls_itr))
 				{
-					return true;
+					// DO NOTHING
+				} else {
+					if (!preparedStatementExecute(input_str, result, result_vec, session, session_statement_itr, callname, calls_itr, tokens, insertID))
+					{
+						// DO NOTHING
+					} else {
+						success = true;
+						break;
+					}
 				}
 			}
+		}
+		if (!success)
+		{
+			return true;
 		}
 		result = "[1,[";
 		if (calls_itr->second.returnInsertID)
