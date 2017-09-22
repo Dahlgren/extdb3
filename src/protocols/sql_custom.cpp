@@ -100,6 +100,7 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 		ptree.get_child("Default").erase("Strip Chars Mode");
 		ptree.get_child("Default").erase("Version");
 		ptree.get_child("Default").erase("Input SQF Parser");
+		ptree.get_child("Default").erase("Number of Retrys");
 
 		for (auto& value : ptree.get_child("Default")) {
 			#ifdef DEBUG_TESTING
@@ -810,6 +811,12 @@ bool SQL_CUSTOM::callProtocol (std::string input_str, std::string &result, const
 		}
 		if (!success)
 		{
+			#ifdef DEBUG_TESTING
+				extension_ptr->console->error("extDB3: SQL: Error Max Retrys Reached");
+				extension_ptr->console->error("extDB3: SQL: Error Max Retrys Reached");
+			#endif
+			extension_ptr->logger->error("extDB3: SQL: Error Max Retrys Reached");
+			extension_ptr->logger->error("extDB3: SQL: Error Max Retrys Reached");
 			return true;
 		}
 		result = "[1,[";
