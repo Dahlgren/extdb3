@@ -40,7 +40,7 @@ class SQL_CUSTOM: public AbstractProtocol
 			bool input_sqf_parser = false;
 			
 			int highest_input_value = 0;
-
+			int num_of_retrys = 0;
 			std::vector<sql_struct> sql;
 		};
 		

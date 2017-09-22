@@ -88,7 +88,13 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 		boost::property_tree::ini_parser::read_ini(config_path.string(), ptree);
 		std::string strip_chars = ptree.get("Default.Strip Chars", "");
 		int strip_chars_mode = ptree.get("Default.Strip Chars Mode", 0);
+		int num_of_retrys = ptree.get("Default.Number of Retrys", 1);
+		if ((num_of_retrys) <= 0)
+		{
+			num_of_retrys = 0;
+		}
 		bool input_sqf_parser = ptree.get("Default.Input SQF Parser", false);
+
 
 		ptree.get_child("Default").erase("Strip Chars");
 		ptree.get_child("Default").erase("Strip Chars Mode");
@@ -344,6 +350,14 @@ bool SQL_CUSTOM::loadConfig(boost::filesystem::path &config_path)
 			path = section.first + ".Input SQF Parser";
 			calls[section.first].input_sqf_parser = ptree.get(path, input_sqf_parser);
 			ptree.get_child(section.first).erase("Input SQF Parser");
+
+			path = section.first + ".Number of Retrys";
+			calls[section.first].num_of_retrys = ptree.get(path, num_of_retrys);
+			if (calls[section.first].num_of_retrys < 0)
+			{
+				calls[section.first].num_of_retrys = 0;
+			}
+			ptree.get_child(section.first).erase("Number of Retrys");
 
 			for (auto& value : section.second) {
 				#ifdef DEBUG_TESTING
@@ -762,7 +776,7 @@ bool SQL_CUSTOM::callProtocol (std::string input_str, std::string &result, const
 		bool success = false;
 		if (!calls_itr->second.preparedStatement)
 		{
-			for (int i = 0; i < 5; ++i)
+			for (int i = 0; i <= calls_itr->second.num_of_retrys; ++i)
 			{
 				if (!query(input_str, result, result_vec, tokens, session, insertID, calls_itr))
 				{
@@ -777,7 +791,7 @@ bool SQL_CUSTOM::callProtocol (std::string input_str, std::string &result, const
 			// -------------------
 			// Prepared Statement
 			// -------------------
-			for (int i = 0; i < 5; ++i)
+			for (int i = 0; i <= calls_itr->second.num_of_retrys; ++i)
 			{
 				MariaDBStatement *session_statement_itr = nullptr;
 				if (!preparedStatementPrepare(input_str, result, result_vec, session, session_statement_itr, callname, calls_itr))
