@@ -43,8 +43,8 @@ void MariaDBConnector::connect()
 	mysql_ptr = mysql_init(mysql_ptr);
 	//mysql_optionsv(mysql_ptr, MYSQL_OPT_COMPRESS, NULL); // Compression
 	//mysql_optionsv(mysql_ptr, MYSQL_OPT_CONNECT_TIMEOUT, (const char *)5);
-	mysql_optionsv(mysql_ptr, MYSQL_OPT_RECONNECT, (void *)"1");
-	mysql_optionsv(mysql_ptr, MYSQL_SET_CHARSET_NAME, (void *)"utf8");
+	mysql_options(mysql_ptr, MYSQL_OPT_RECONNECT, (void *)"1");
+	mysql_options(mysql_ptr, MYSQL_SET_CHARSET_NAME, (void *)"utf8");
 	if (!(mysql_real_connect(mysql_ptr, login_data.host.c_str(), login_data.user.c_str(), login_data.password.c_str(), login_data.db.c_str(), login_data.port, 0, 0)))
 	{
 		throw MariaDBConnectorException(mysql_ptr);

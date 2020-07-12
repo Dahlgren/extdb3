@@ -3,12 +3,30 @@
 cmake_minimum_required(VERSION 3.2)
 cmake_policy(SET CMP0015 NEW)
 
+# Download automatically, you can also just copy the conan.cmake file
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+	message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+	file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.14/conan.cmake"
+			"${CMAKE_BINARY_DIR}/conan.cmake")
+endif()
+
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+
 set(CMAKE_USER_MAKE_RULES_OVERRIDE
    ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/c_flag_overrides.cmake)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
    ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/cxx_flag_overrides.cmake)
 
 project(extDB3)
+
+set(CONAN_ARCH "x86_64")
+
+conan_cmake_run(CONANFILE conanfile.txt
+		BASIC_SETUP CMAKE_TARGETS
+		BUILD missing
+		SETTINGS arch=${CONAN_ARCH}
+		SETTINGS arch_build=${CONAN_ARCH}
+		)
 
 set(CMAKE_SUPPRESS_REGENERATION 1)
 if(NOT CMAKE_BUILD_TYPE)
@@ -86,23 +104,7 @@ set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 if(${WIN32})
-	set(BOOST_ROOT "C:/local/boost_1_64_0")
-	if (CMAKE_CL_64)
-		set(BOOST_LIBRARYDIR "C:/local/boost_1_64_0/lib64-msvc-14.0")
-	else()
-  	set(BOOST_LIBRARYDIR "C:/local/boost_1_64_0/lib32-msvc-14.0")
-	endif()
 	add_definitions(-D _WIN32_WINNT=0x0600)
-endif()
-if (COMPILE_EXTENSION)
-	find_package(Boost REQUIRED COMPONENTS chrono date_time filesystem random regex system thread)
-else()
-	find_package(Boost REQUIRED COMPONENTS chrono date_time filesystem program_options random regex system thread)
-endif()
-if(Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIRS})
-else()
-	message(FATAL_ERROR "\nBOOST not found\n Please Set BOOST_ROOT & BOOST_LIBRARYDIR")
 endif()
 
 # MYSQL
@@ -161,21 +163,13 @@ if(${WIN32})
 	# Windows
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4996")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4996")
-	target_link_libraries(${EXECUTABLE_NAME} ${TBB_MALLOC_LIBRARY}  ${Boost_LIBRARIES} ${MYSQL_LIBRARY} Iphlpapi)
+	target_link_libraries(${EXECUTABLE_NAME} ${TBB_MALLOC_LIBRARY} CONAN_PKG::boost ${MYSQL_LIBRARY} Iphlpapi)
 	add_definitions(-DUNICODE -D_UNICODE -DWIN32_LEAN_AND_MEAN)
 	SET_TARGET_PROPERTIES(${EXECUTABLE_NAME} PROPERTIES LINK_FLAGS " /MANIFEST:NO /ERRORREPORT:NONE")
 else()
 	# Linux
-	target_link_libraries(${EXECUTABLE_NAME} -Wl,-Bstatic ${Boost_LIBRARIES} ${MYSQL_LIBRARY} -lssl -lcrypto  -Wl,-Bdynamic ${TBB_MALLOC_LIBRARY} -ldl -pthread -lz)
+	target_link_libraries(${EXECUTABLE_NAME} -Wl,-Bstatic CONAN_PKG::boost ${MYSQL_LIBRARY} -lssl -lcrypto  -Wl,-Bdynamic ${TBB_MALLOC_LIBRARY} -ldl -pthread -lz)
 	set(CMAKE_CXX_FLAGS "-std=c++0x -static-libstdc++ -static-libgcc ${CMAKE_CXX_FLAGS}")
-
-	if (NOT COMPILE_TEST_APPLICATION)
-		ADD_CUSTOM_COMMAND(
-			TARGET ${EXECUTABLE_NAME}
-			POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E rename libextDB3.so extDB3.so
-		)
-	endif()
 endif()
 
 mark_as_advanced(CMAKE_INSTALL_PREFIX)

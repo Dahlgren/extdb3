@@ -87,7 +87,7 @@ void MariaDBPool::idleCleanup()
 				if ((original_thread_id) != mysql_thread_id((*session_itr)->connector.mysql_ptr))
 				{
 					(*session_itr)->statements.clear();
-					mysql_reset_connection((*session_itr)->connector.mysql_ptr);
+					//mysql_reset_connection((*session_itr)->connector.mysql_ptr);
 				};
 			};
 		}
